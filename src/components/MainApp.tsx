@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Navigation } from "@/components/Navigation";
@@ -20,6 +21,8 @@ import { PatrimonyItem } from "@/pages/Index";
 type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier';
 
 export const MainApp = () => {
+  console.log('MainApp component rendering');
+  
   const { currentUser, logout, hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [availableLocations, setAvailableLocations] = useState<string[]>([
@@ -30,7 +33,6 @@ export const MainApp = () => {
   ]);
   const [availableResponsibles, setAvailableResponsibles] = useState<string[]>([]);
   
-  // Debug log para verificar o estado atual
   console.log('MainApp - Current activeTab:', activeTab);
   console.log('MainApp - Current user:', currentUser);
   
@@ -39,6 +41,9 @@ export const MainApp = () => {
   const { users, addUser } = useUserData();
   const { logs, addLog } = useLogData();
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useSupplierData();
+
+  console.log('MainApp - Hooks loaded, patrimonyItems length:', patrimonyItems.length);
+  console.log('MainApp - Suppliers length:', suppliers.length);
 
   const handleLocationAdded = (location: string) => {
     if (!availableLocations.includes(location)) {
@@ -54,122 +59,174 @@ export const MainApp = () => {
 
   const handleAddPatrimonyItem = (item: Omit<PatrimonyItem, 'id'>) => {
     console.log('Adding patrimony item:', item);
-    const newItem = addPatrimonyItem(item);
-    if (currentUser) {
-      addLog('CREATE', 'PATRIMONY', `Criou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, newItem.id, item.name);
+    try {
+      const newItem = addPatrimonyItem(item);
+      if (currentUser) {
+        addLog('CREATE', 'PATRIMONY', `Criou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, newItem.id, item.name);
+      }
+      setActiveTab('items');
+    } catch (error) {
+      console.error('Error adding patrimony item:', error);
     }
-    setActiveTab('items');
   };
 
   const handleAddUser = (user: Omit<User, 'id' | 'createdAt'> & { role: 'admin' | 'user' }) => {
-    const newUser = addUser(user);
-    if (currentUser) {
-      addLog('CREATE', 'USER', `Criou usuário: ${user.fullName} (${user.role === 'admin' ? 'Administrador' : 'Usuário'})`, currentUser.id, currentUser.fullName, newUser.id, user.fullName);
+    try {
+      const newUser = addUser(user);
+      if (currentUser) {
+        addLog('CREATE', 'USER', `Criou usuário: ${user.fullName} (${user.role === 'admin' ? 'Administrador' : 'Usuário'})`, currentUser.id, currentUser.fullName, newUser.id, user.fullName);
+      }
+      setActiveTab('users');
+    } catch (error) {
+      console.error('Error adding user:', error);
     }
-    setActiveTab('users');
   };
 
   const handleUpdatePatrimonyItem = (id: string, updatedItem: Partial<PatrimonyItem>) => {
-    const item = patrimonyItems.find(p => p.id === id);
-    updatePatrimonyItem(id, updatedItem);
-    if (item && currentUser) {
-      addLog('UPDATE', 'PATRIMONY', `Editou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, id, item.name);
+    try {
+      const item = patrimonyItems.find(p => p.id === id);
+      updatePatrimonyItem(id, updatedItem);
+      if (item && currentUser) {
+        addLog('UPDATE', 'PATRIMONY', `Editou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, id, item.name);
+      }
+    } catch (error) {
+      console.error('Error updating patrimony item:', error);
     }
   };
 
   const handleDeletePatrimonyItem = (id: string) => {
-    const item = patrimonyItems.find(p => p.id === id);
-    deletePatrimonyItem(id);
-    if (item && currentUser) {
-      addLog('DELETE', 'PATRIMONY', `Deletou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, id, item.name);
+    try {
+      const item = patrimonyItems.find(p => p.id === id);
+      deletePatrimonyItem(id);
+      if (item && currentUser) {
+        addLog('DELETE', 'PATRIMONY', `Deletou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, id, item.name);
+      }
+    } catch (error) {
+      console.error('Error deleting patrimony item:', error);
     }
   };
 
   const handleAddSupplier = (supplier: Omit<import("@/types/supplier").Supplier, 'id' | 'createdAt'>) => {
-    const newSupplier = addSupplier(supplier);
-    if (currentUser) {
-      addLog('CREATE', 'SUPPLIER', `Criou fornecedor: ${supplier.name}`, currentUser.id, currentUser.fullName, newSupplier.id, supplier.name);
+    try {
+      const newSupplier = addSupplier(supplier);
+      if (currentUser) {
+        addLog('CREATE', 'SUPPLIER', `Criou fornecedor: ${supplier.name}`, currentUser.id, currentUser.fullName, newSupplier.id, supplier.name);
+      }
+      setActiveTab('suppliers');
+    } catch (error) {
+      console.error('Error adding supplier:', error);
     }
-    setActiveTab('suppliers');
   };
 
   const handleDeleteSupplier = (id: string) => {
-    const supplier = suppliers.find(s => s.id === id);
-    deleteSupplier(id);
-    if (supplier && currentUser) {
-      addLog('DELETE', 'SUPPLIER', `Deletou fornecedor: ${supplier.name}`, currentUser.id, currentUser.fullName, id, supplier.name);
+    try {
+      const supplier = suppliers.find(s => s.id === id);
+      deleteSupplier(id);
+      if (supplier && currentUser) {
+        addLog('DELETE', 'SUPPLIER', `Deletou fornecedor: ${supplier.name}`, currentUser.id, currentUser.fullName, id, supplier.name);
+      }
+    } catch (error) {
+      console.error('Error deleting supplier:', error);
     }
   };
 
   const handleLogout = () => {
-    if (currentUser) {
-      addLog('LOGOUT', 'SYSTEM', 'Usuário fez logout do sistema', currentUser.id, currentUser.fullName);
+    try {
+      if (currentUser) {
+        addLog('LOGOUT', 'SYSTEM', 'Usuário fez logout do sistema', currentUser.id, currentUser.fullName);
+      }
+      logout();
+    } catch (error) {
+      console.error('Error during logout:', error);
     }
-    logout();
   };
 
   if (!currentUser) {
+    console.log('MainApp - No current user, returning null');
     return null;
   }
 
   const renderContent = () => {
-    console.log('Rendering content for tab:', activeTab);
+    console.log('MainApp - Rendering content for tab:', activeTab);
     
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard patrimonyItems={patrimonyItems} />;
+    try {
+      switch (activeTab) {
+        case 'dashboard':
+          console.log('MainApp - Rendering Dashboard');
+          return <Dashboard patrimonyItems={patrimonyItems} />;
 
-      case 'items':
-        return (
-          <PatrimonyList 
-            items={patrimonyItems}
-            onUpdate={hasPermission('edit') ? handleUpdatePatrimonyItem : undefined}
-            onDelete={hasPermission('delete') ? handleDeletePatrimonyItem : undefined}
-          />
-        );
+        case 'items':
+          console.log('MainApp - Rendering PatrimonyList');
+          return (
+            <PatrimonyList 
+              items={patrimonyItems}
+              onUpdate={hasPermission('edit') ? handleUpdatePatrimonyItem : undefined}
+              onDelete={hasPermission('delete') ? handleDeletePatrimonyItem : undefined}
+            />
+          );
 
-      case 'add':
-        console.log('Rendering PatrimonyForm with suppliers:', suppliers);
-        return (
-          <PatrimonyForm 
-            onSubmit={handleAddPatrimonyItem} 
-            existingItems={patrimonyItems}
-            suppliers={suppliers}
-            users={users}
-            availableLocations={availableLocations}
-            availableResponsibles={availableResponsibles}
-          />
-        );
+        case 'add':
+          console.log('MainApp - Rendering PatrimonyForm');
+          return (
+            <PatrimonyForm 
+              onSubmit={handleAddPatrimonyItem} 
+              existingItems={patrimonyItems}
+              suppliers={suppliers}
+              users={users}
+              availableLocations={availableLocations}
+              availableResponsibles={availableResponsibles}
+            />
+          );
 
-      case 'users':
-        if (!hasPermission('admin')) return null;
-        return <UserList users={users} />;
+        case 'users':
+          if (!hasPermission('admin')) {
+            console.log('MainApp - No admin permission for users');
+            return null;
+          }
+          console.log('MainApp - Rendering UserList');
+          return <UserList users={users} />;
 
-      case 'addUser':
-        if (!hasPermission('admin')) return null;
-        return <UserForm onSubmit={handleAddUser} />;
+        case 'addUser':
+          if (!hasPermission('admin')) {
+            console.log('MainApp - No admin permission for addUser');
+            return null;
+          }
+          console.log('MainApp - Rendering UserForm');
+          return <UserForm onSubmit={handleAddUser} />;
 
-      case 'logs':
-        return <LogList logs={logs} />;
+        case 'logs':
+          console.log('MainApp - Rendering LogList');
+          return <LogList logs={logs} />;
 
-      case 'suppliers':
-        return (
-          <SupplierList 
-            suppliers={suppliers}
-            onDelete={hasPermission('delete') ? handleDeleteSupplier : undefined}
-          />
-        );
+        case 'suppliers':
+          console.log('MainApp - Rendering SupplierList');
+          return (
+            <SupplierList 
+              suppliers={suppliers}
+              onDelete={hasPermission('delete') ? handleDeleteSupplier : undefined}
+            />
+          );
 
-      case 'addSupplier':
-        if (!hasPermission('edit')) return null;
-        return <SupplierForm onSubmit={handleAddSupplier} />;
+        case 'addSupplier':
+          if (!hasPermission('edit')) {
+            console.log('MainApp - No edit permission for addSupplier');
+            return null;
+          }
+          console.log('MainApp - Rendering SupplierForm');
+          return <SupplierForm onSubmit={handleAddSupplier} />;
 
-      default:
-        console.log('Unknown tab, returning to dashboard');
-        setActiveTab('dashboard');
-        return null;
+        default:
+          console.log('MainApp - Unknown tab, returning to dashboard');
+          setActiveTab('dashboard');
+          return null;
+      }
+    } catch (error) {
+      console.error('MainApp - Error rendering content:', error);
+      return <div>Erro ao carregar conteúdo</div>;
     }
   };
+
+  console.log('MainApp - About to render main structure');
 
   return (
     <div className="min-h-screen bg-gray-50">

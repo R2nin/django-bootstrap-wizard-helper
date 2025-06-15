@@ -19,18 +19,27 @@ export interface PatrimonyItem {
 }
 
 const AppContent = () => {
+  console.log('AppContent component rendering');
   const { currentUser } = useAuth();
   
+  console.log('AppContent - Current user:', currentUser);
+  
   if (!currentUser) {
+    console.log('AppContent - No user, showing LoginForm');
     return <LoginForm />;
   }
 
+  console.log('AppContent - User found, showing MainApp');
   return <MainApp />;
 };
 
 const Index = () => {
+  console.log('Index component rendering');
+  
   // Carregando usuários do localStorage através do hook
   const { users } = useUserData();
+  
+  console.log('Index - Users loaded:', users.length);
 
   return (
     <AuthProvider users={users}>

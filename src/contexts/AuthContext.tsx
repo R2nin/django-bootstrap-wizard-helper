@@ -25,23 +25,37 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children, users }: AuthProviderProps) => {
+  console.log('AuthProvider rendering with users:', users.length);
+  
   const [currentUser, setCurrentUser] = useState<UserWithRole | null>(null);
 
   const login = (email: string, password: string): boolean => {
-    const user = users.find(u => u.email === email && u.password === password);
-    if (user) {
-      setCurrentUser(user);
-      return true;
+    console.log('AuthProvider - Login attempt for:', email);
+    try {
+      const user = users.find(u => u.email === email && u.password === password);
+      if (user) {
+        console.log('AuthProvider - Login successful for:', user.fullName);
+        setCurrentUser(user);
+        return true;
+      }
+      console.log('AuthProvider - Login failed - user not found');
+      return false;
+    } catch (error) {
+      console.error('AuthProvider - Login error:', error);
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
+    console.log('AuthProvider - Logging out user');
     setCurrentUser(null);
   };
 
   const hasPermission = (action: 'view' | 'edit' | 'delete' | 'admin'): boolean => {
-    if (!currentUser) return false;
+    if (!currentUser) {
+      console.log('AuthProvider - No permission - no current user');
+      return false;
+    }
     
     switch (action) {
       case 'view':
@@ -54,6 +68,8 @@ export const AuthProvider = ({ children, users }: AuthProviderProps) => {
         return false;
     }
   };
+
+  console.log('AuthProvider - Current user state:', currentUser?.fullName || 'none');
 
   return (
     <AuthContext.Provider value={{ currentUser, login, logout, hasPermission }}>
