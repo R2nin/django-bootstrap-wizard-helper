@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,25 +8,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PatrimonyItem } from "@/pages/Index";
 import { Supplier } from "@/types/supplier";
+import { Search } from "lucide-react";
 
 interface PatrimonyFormProps {
   onSubmit: (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => void;
-  initialData?: PatrimonyItem;
+  onUpdate: (id: string, item: Partial<PatrimonyItem>) => void;
   existingItems?: PatrimonyItem[];
   suppliers?: Supplier[];
 }
 
-export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppliers = [] }: PatrimonyFormProps) => {
+export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], suppliers = [] }: PatrimonyFormProps) => {
+  const [searchChapa, setSearchChapa] = useState('');
+  const [editingItem, setEditingItem] = useState<PatrimonyItem | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  
   const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    category: initialData?.category || '',
-    location: initialData?.location || '',
-    acquisitionDate: initialData?.acquisitionDate || '',
-    value: initialData?.value || 0,
-    status: initialData?.status || 'active' as const,
-    description: initialData?.description || '',
-    responsible: initialData?.responsible || '',
-    supplierId: initialData?.supplierId || 'none'
+    name: '',
+    category: '',
+    location: '',
+    acquisitionDate: '',
+    value: 0,
+    status: 'active' as const,
+    description: '',
+    responsible: '',
+    supplierId: 'none'
   });
 
   // Extrair dados únicos dos itens existentes
@@ -39,16 +44,31 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
     return maxChapa + 1;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const submitData = {
-      ...formData,
-      supplierId: formData.supplierId === 'none' ? undefined : formData.supplierId
-    };
-    onSubmit(submitData);
+  const handleSearchChapa = () => {
+    const chapaNumber = parseInt(searchChapa);
+    if (!chapaNumber) return;
+
+    const existingItem = existingItems.find(item => item.numeroChapa === chapaNumber);
     
-    // Reset form if not editing
-    if (!initialData) {
+    if (existingItem) {
+      // Item encontrado - modo edição
+      setEditingItem(existingItem);
+      setIsEditing(true);
+      setFormData({
+        name: existingItem.name,
+        category: existingItem.category,
+        location: existingItem.location,
+        acquisitionDate: existingItem.acquisitionDate,
+        value: existingItem.value,
+        status: existingItem.status,
+        description: existingItem.description || '',
+        responsible: existingItem.responsible,
+        supplierId: existingItem.supplierId || 'none'
+      });
+    } else {
+      // Item não encontrado - modo criação com chapa específica
+      setEditingItem(null);
+      setIsEditing(false);
       setFormData({
         name: '',
         category: '',
@@ -61,6 +81,55 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
         supplierId: 'none'
       });
     }
+  };
+
+  const handleClearForm = () => {
+    setSearchChapa('');
+    setEditingItem(null);
+    setIsEditing(false);
+    setFormData({
+      name: '',
+      category: '',
+      location: '',
+      acquisitionDate: '',
+      value: 0,
+      status: 'active',
+      description: '',
+      responsible: '',
+      supplierId: 'none'
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (isEditing && editingItem) {
+      // Atualizar item existente
+      const submitData = {
+        ...formData,
+        supplierId: formData.supplierId === 'none' ? undefined : formData.supplierId
+      };
+      onUpdate(editingItem.id, submitData);
+    } else {
+      // Criar novo item
+      const submitData = {
+        ...formData,
+        supplierId: formData.supplierId === 'none' ? undefined : formData.supplierId
+      };
+      onSubmit(submitData);
+    }
+    
+    handleClearForm();
+  };
+
+  const getCurrentChapa = () => {
+    if (isEditing && editingItem) {
+      return editingItem.numeroChapa;
+    }
+    if (searchChapa && !isNaN(parseInt(searchChapa))) {
+      return parseInt(searchChapa);
+    }
+    return getNextChapa();
   };
 
   const categories = [
@@ -76,9 +145,43 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>
-          {initialData ? 'Editar Item' : 'Adicionar Novo Item ao Patrimônio'}
+          {isEditing ? 'Editar Item do Patrimônio' : 'Adicionar/Buscar Item do Patrimônio'}
         </CardTitle>
+        
+        {/* Campo de busca por chapa */}
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <Label htmlFor="searchChapa">Número da Chapa</Label>
+            <Input
+              id="searchChapa"
+              type="number"
+              value={searchChapa}
+              onChange={(e) => setSearchChapa(e.target.value)}
+              placeholder="Digite o número da chapa para buscar ou deixe vazio para criar novo"
+            />
+          </div>
+          <Button type="button" onClick={handleSearchChapa} disabled={!searchChapa}>
+            <Search className="h-4 w-4 mr-2" />
+            Buscar
+          </Button>
+          <Button type="button" variant="outline" onClick={handleClearForm}>
+            Limpar
+          </Button>
+        </div>
+        
+        {isEditing && (
+          <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+            Item encontrado! Você está editando o item da chapa {editingItem?.numeroChapa}.
+          </div>
+        )}
+        
+        {searchChapa && !isEditing && !existingItems.find(item => item.numeroChapa === parseInt(searchChapa)) && (
+          <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
+            Chapa não encontrada. Um novo item será criado com a chapa {searchChapa}.
+          </div>
+        )}
       </CardHeader>
+      
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -86,10 +189,9 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
               <Label htmlFor="numeroChapa">Número da Chapa</Label>
               <Input
                 id="numeroChapa"
-                value={initialData?.numeroChapa || getNextChapa()}
+                value={getCurrentChapa()}
                 readOnly
                 className="bg-gray-100"
-                placeholder="Será gerado automaticamente"
               />
             </div>
 
@@ -234,7 +336,7 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
           </div>
 
           <Button type="submit" className="w-full">
-            {initialData ? 'Atualizar Item' : 'Adicionar ao Patrimônio'}
+            {isEditing ? 'Atualizar Item' : 'Adicionar ao Patrimônio'}
           </Button>
         </form>
       </CardContent>

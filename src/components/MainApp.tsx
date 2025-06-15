@@ -1,204 +1,307 @@
-
-import { useState } from "react";
-import { Header } from "@/components/Header";
-import { Navigation } from "@/components/Navigation";
-import { Dashboard } from "@/components/Dashboard";
-import { PatrimonyForm } from "@/components/PatrimonyForm";
-import { PatrimonyList } from "@/components/PatrimonyList";
-import { UserForm } from "@/components/UserForm";
-import { UserList } from "@/components/UserList";
-import { LogList } from "@/components/LogList";
-import { SupplierForm } from "@/components/SupplierForm";
-import { SupplierList } from "@/components/SupplierList";
-import { LocationForm } from "@/components/LocationForm";
-import { useAuth } from "@/contexts/AuthContext";
-import { usePatrimonyData } from "@/hooks/usePatrimonyData";
-import { useUserData } from "@/hooks/useUserData";
-import { useLogData } from "@/hooks/useLogData";
-import { useSupplierData } from "@/hooks/useSupplierData";
-import { useLocationData } from "@/hooks/useLocationData";
-import { User } from "@/types/user";
-import { PatrimonyItem } from "@/pages/Index";
+import { useState, useEffect } from 'react';
+import { Navigation } from './Navigation';
+import { Header } from './Header';
+import { PatrimonyList } from './PatrimonyList';
+import { PatrimonyForm } from './PatrimonyForm';
+import { LogsList } from './LogsList';
+import { UsersList } from './UsersList';
+import { UserForm } from './UserForm';
+import { LoginForm } from './LoginForm';
+import { usePatrimonyData } from '@/hooks/usePatrimonyData';
+import { useLogsData } from '@/hooks/useLogsData';
+import { useUsersData } from '@/hooks/useUsersData';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { LogAction, LogEntity, PatrimonyItem, UserWithRole } from '@/types/log';
+import { useSupplierData } from '@/hooks/useSupplierData';
+import { SuppliersList } from './SuppliersList';
+import { SupplierForm } from './SupplierForm';
+import { useLocationData } from '@/hooks/useLocationData';
+import { LocationForm } from './LocationForm';
+import { toast } from "@/components/ui/use-toast"
+import { LocalStorage } from '@/utils/localStorage';
+import { Supplier } from '@/types/supplier';
 
 type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation';
 
-export const MainApp = () => {
-  const { currentUser, logout, hasPermission } = useAuth();
+interface MainAppProps {
+  currentUser: UserWithRole;
+  onLogout: () => void;
+}
+
+export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
-  
-  // Debug log para verificar o estado atual
-  console.log('MainApp - Current activeTab:', activeTab);
-  console.log('MainApp - Current user:', currentUser);
-  
-  // Usando hooks customizados para persistência local
-  const { items: patrimonyItems, addItem: addPatrimonyItem, updateItem: updatePatrimonyItem, deleteItem: deletePatrimonyItem } = usePatrimonyData();
-  const { users, addUser, deleteUser } = useUserData();
-  const { logs, addLog } = useLogData();
+  const { items, addItem, updateItem, deleteItem } = usePatrimonyData();
+  const { logs, addLog } = useLogsData();
+  const { users, addUser, updateUser, deleteUser } = useUsersData();
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useSupplierData();
-  const { locations, addLocation } = useLocationData();
+  const { locations, addLocation, deleteLocation } = useLocationData();
+  const { login, logout } = useAuth();
+  const [isAddingLocation, setIsAddingLocation] = useState(false);
 
-  const handleAddPatrimonyItem = (item: Omit<PatrimonyItem, 'id'>) => {
-    console.log('Adding patrimony item:', item);
-    const newItem = addPatrimonyItem(item);
-    if (currentUser) {
-      addLog('CREATE', 'PATRIMONY', `Criou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, newItem.id, item.name);
+  useEffect(() => {
+    console.log('Active Tab:', activeTab);
+  }, [activeTab]);
+
+  const hasPermission = (action: 'view' | 'edit' | 'delete' | 'admin'): boolean => {
+    if (currentUser.role === 'admin') return true;
+
+    switch (action) {
+      case 'view':
+        return true;
+      case 'edit':
+        return currentUser.role === 'admin';
+      case 'delete':
+        return currentUser.role === 'admin';
+      case 'admin':
+        return currentUser.role === 'admin';
+      default:
+        return false;
     }
-    setActiveTab('items');
   };
 
-  const handleAddUser = (user: Omit<User, 'id' | 'createdAt'> & { role: 'admin' | 'user' }) => {
+  const handleAddItem = (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => {
+    const newItem = addItem(item);
+    addLog({
+      action: 'CREATE',
+      entity: 'PATRIMONY',
+      entityId: newItem.id,
+      entityName: `${newItem.name} (Chapa: ${newItem.numeroChapa})`,
+      description: 'Novo item adicionado ao patrimônio'
+    });
+    toast({
+      title: "Sucesso!",
+      description: "Item adicionado com sucesso ao patrimônio.",
+    })
+  };
+
+  const handleUpdateItem = (id: string, updates: Partial<PatrimonyItem>) => {
+    updateItem(id, updates);
+    
+    const updatedItem = items.find(item => item.id === id);
+    if (updatedItem) {
+      addLog({
+        action: 'UPDATE',
+        entity: 'PATRIMONY',
+        entityId: id,
+        entityName: `${updatedItem.name} (Chapa: ${updatedItem.numeroChapa})`,
+        description: `Item atualizado: ${Object.keys(updates).join(', ')}`
+      });
+    }
+  };
+
+  const handleDeleteItem = (id: string) => {
+    const deletedItem = items.find(item => item.id === id);
+    deleteItem(id);
+    if (deletedItem) {
+      addLog({
+        action: 'DELETE',
+        entity: 'PATRIMONY',
+        entityId: id,
+        entityName: `${deletedItem.name} (Chapa: ${deletedItem.numeroChapa})`,
+        description: 'Item removido do patrimônio'
+      });
+    }
+  };
+
+  const handleAddUser = (user: Omit<UserWithRole, 'id' | 'createdAt'>) => {
     const newUser = addUser(user);
-    if (currentUser) {
-      addLog('CREATE', 'USER', `Criou usuário: ${user.fullName} (${user.role === 'admin' ? 'Administrador' : 'Usuário'})`, currentUser.id, currentUser.fullName, newUser.id, user.fullName);
-    }
-    setActiveTab('users');
+    addLog({
+      action: 'CREATE',
+      entity: 'USER',
+      entityId: newUser.id,
+      entityName: newUser.fullName,
+      description: 'Novo usuário adicionado ao sistema'
+    });
   };
 
-  const handleUpdatePatrimonyItem = (id: string, updatedItem: Partial<PatrimonyItem>) => {
-    const item = patrimonyItems.find(p => p.id === id);
-    updatePatrimonyItem(id, updatedItem);
-    if (item && currentUser) {
-      addLog('UPDATE', 'PATRIMONY', `Editou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, id, item.name);
-    }
-  };
-
-  const handleDeletePatrimonyItem = (id: string) => {
-    const item = patrimonyItems.find(p => p.id === id);
-    deletePatrimonyItem(id);
-    if (item && currentUser) {
-      addLog('DELETE', 'PATRIMONY', `Deletou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, id, item.name);
+  const handleUpdateUser = (id: string, updates: Partial<UserWithRole>) => {
+    updateUser(id, updates);
+    const updatedUser = users.find(user => user.id === id);
+    if (updatedUser) {
+      addLog({
+        action: 'UPDATE',
+        entity: 'USER',
+        entityId: id,
+        entityName: updatedUser.fullName,
+        description: `Usuário atualizado: ${Object.keys(updates).join(', ')}`
+      });
     }
   };
 
   const handleDeleteUser = (id: string) => {
-    const user = users.find(u => u.id === id);
+    const deletedUser = users.find(user => user.id === id);
     deleteUser(id);
-    if (user && currentUser) {
-      addLog('DELETE', 'USER', `Deletou usuário: ${user.fullName}`, currentUser.id, currentUser.fullName, id, user.fullName);
+    if (deletedUser) {
+      addLog({
+        action: 'DELETE',
+        entity: 'USER',
+        entityId: id,
+        entityName: deletedUser.fullName,
+        description: 'Usuário removido do sistema'
+      });
     }
   };
 
-  const handleAddSupplier = (supplier: Omit<import("@/types/supplier").Supplier, 'id' | 'createdAt'>) => {
+  const handleAddSupplier = (supplier: Omit<Supplier, 'id' | 'createdAt'>) => {
     const newSupplier = addSupplier(supplier);
-    if (currentUser) {
-      addLog('CREATE', 'SUPPLIER', `Criou fornecedor: ${supplier.name}`, currentUser.id, currentUser.fullName, newSupplier.id, supplier.name);
+     addLog({
+       action: 'CREATE',
+       entity: 'SUPPLIER',
+       entityId: newSupplier.id,
+       entityName: newSupplier.name,
+       description: 'Novo fornecedor adicionado ao sistema'
+     });
+  };
+
+  const handleUpdateSupplier = (id: string, updates: Partial<Supplier>) => {
+    updateSupplier(id, updates);
+    const updatedSupplier = suppliers.find(supplier => supplier.id === id);
+    if (updatedSupplier) {
+      addLog({
+        action: 'UPDATE',
+        entity: 'SUPPLIER',
+        entityId: id,
+        entityName: updatedSupplier.name,
+        description: `Fornecedor atualizado: ${Object.keys(updates).join(', ')}`
+      });
     }
-    setActiveTab('suppliers');
   };
 
   const handleDeleteSupplier = (id: string) => {
-    const supplier = suppliers.find(s => s.id === id);
+    const deletedSupplier = suppliers.find(supplier => supplier.id === id);
     deleteSupplier(id);
-    if (supplier && currentUser) {
-      addLog('DELETE', 'SUPPLIER', `Deletou fornecedor: ${supplier.name}`, currentUser.id, currentUser.fullName, id, supplier.name);
+    if (deletedSupplier) {
+       addLog({
+         action: 'DELETE',
+         entity: 'SUPPLIER',
+         entityId: id,
+         entityName: deletedSupplier.name,
+         description: 'Fornecedor removido do sistema'
+       });
     }
   };
 
-  const handleAddLocation = (location: Omit<any, 'id' | 'createdAt'>) => {
+  const handleAddLocation = (location: Omit<{ name: string; responsibleId: string; responsibleName: string; }, 'id' | 'createdAt'>) => {
     const newLocation = addLocation(location);
-    if (currentUser) {
-      addLog('CREATE', 'LOCATION', `Criou localização: ${location.name} - Responsável: ${location.responsibleName}`, currentUser.id, currentUser.fullName, newLocation.id, location.name);
-    }
-    setActiveTab('dashboard');
+    setIsAddingLocation(false);
+    addLog({
+      action: 'CREATE',
+      entity: 'LOCATION',
+      entityId: newLocation.id,
+      entityName: newLocation.name,
+      description: 'Nova localização adicionada ao sistema'
+    });
   };
 
-  const handleLogout = () => {
-    if (currentUser) {
-      addLog('LOGOUT', 'SYSTEM', 'Usuário fez logout do sistema', currentUser.id, currentUser.fullName);
-    }
-    logout();
-  };
-
-  const handleShowLocationForm = () => {
-    setActiveTab('addLocation');
-  };
-
-  if (!currentUser) {
-    return null;
-  }
-
-  const renderContent = () => {
-    console.log('Rendering content for tab:', activeTab);
-    
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard patrimonyItems={patrimonyItems} />;
-
-      case 'items':
-        return (
-          <PatrimonyList 
-            items={patrimonyItems}
-            onUpdate={hasPermission('edit') ? handleUpdatePatrimonyItem : undefined}
-            onDelete={hasPermission('delete') ? handleDeletePatrimonyItem : undefined}
-          />
-        );
-
-      case 'add':
-        console.log('Rendering PatrimonyForm with suppliers:', suppliers);
-        return (
-          <PatrimonyForm 
-            onSubmit={handleAddPatrimonyItem} 
-            existingItems={patrimonyItems}
-            suppliers={suppliers}
-          />
-        );
-
-      case 'users':
-        if (!hasPermission('admin')) return null;
-        return <UserList users={users} onDelete={hasPermission('delete') ? handleDeleteUser : undefined} />;
-
-      case 'addUser':
-        if (!hasPermission('admin')) return null;
-        return <UserForm onSubmit={handleAddUser} />;
-
-      case 'logs':
-        return <LogList logs={logs} />;
-
-      case 'suppliers':
-        return (
-          <SupplierList 
-            suppliers={suppliers}
-            onDelete={hasPermission('delete') ? handleDeleteSupplier : undefined}
-          />
-        );
-
-      case 'addSupplier':
-        if (!hasPermission('edit')) return null;
-        return <SupplierForm onSubmit={handleAddSupplier} />;
-
-      case 'addLocation':
-        if (!hasPermission('edit')) return null;
-        return (
-          <LocationForm 
-            onSubmit={handleAddLocation} 
-            users={users}
-            onCancel={() => setActiveTab('dashboard')}
-          />
-        );
-
-      default:
-        console.log('Unknown tab, returning to dashboard');
-        setActiveTab('dashboard');
-        return null;
+  const handleDeleteLocation = (id: string) => {
+    const deletedLocation = locations.find(location => location.id === id);
+    deleteLocation(id);
+    if (deletedLocation) {
+      addLog({
+        action: 'DELETE',
+        entity: 'LOCATION',
+        entityId: id,
+        entityName: deletedLocation.name,
+        description: 'Localização removida do sistema'
+      });
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
-        currentUser={currentUser} 
-        onLogout={handleLogout} 
-        onAddLocation={handleShowLocationForm}
-      />
-      <Navigation 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        hasPermission={hasPermission} 
-      />
-      
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderContent()}
+    <div className="flex flex-col h-screen">
+      <Header currentUser={currentUser} onLogout={onLogout} onAddLocation={() => setIsAddingLocation(true)} />
+
+      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} hasPermission={hasPermission} />
+
+      <main className="flex-grow overflow-y-auto p-4">
+        {isAddingLocation && (
+          <Card className="max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle>Adicionar Nova Localização</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LocationForm onSubmit={handleAddLocation} />
+            </CardContent>
+          </Card>
+        )}
+
+        {!isAddingLocation && (
+          <>
+            {activeTab === 'dashboard' && (
+              <Card className="max-w-4xl mx-auto">
+                <CardHeader>
+                  <CardTitle>Dashboard</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">
+                    Bem-vindo ao Sistema de Gestão Patrimonial. Utilize os menus acima para navegar
+                    entre as funcionalidades.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeTab === 'items' && (
+              <PatrimonyList
+                items={items}
+                onUpdate={handleUpdateItem}
+                onDelete={handleDeleteItem}
+              />
+            )}
+
+        {activeTab === 'add' && hasPermission('edit') && (
+          <PatrimonyForm
+            onSubmit={handleAddItem}
+            onUpdate={handleUpdateItem}
+            existingItems={items}
+            suppliers={suppliers}
+          />
+        )}
+            {activeTab === 'suppliers' && (
+              <SuppliersList
+                suppliers={suppliers}
+                onUpdate={handleUpdateSupplier}
+                onDelete={handleDeleteSupplier}
+              />
+            )}
+
+            {activeTab === 'addSupplier' && hasPermission('edit') && (
+              <SupplierForm
+                onSubmit={handleAddSupplier}
+              />
+            )}
+
+            {activeTab === 'logs' && (
+              <LogsList logs={logs} />
+            )}
+
+            {activeTab === 'users' && hasPermission('admin') && (
+              <UsersList
+                users={users}
+                onUpdate={handleUpdateUser}
+                onDelete={handleDeleteUser}
+              />
+            )}
+
+            {activeTab === 'addUser' && hasPermission('admin') && (
+              <UserForm onSubmit={handleAddUser} />
+            )}
+          </>
+        )}
       </main>
     </div>
   );
