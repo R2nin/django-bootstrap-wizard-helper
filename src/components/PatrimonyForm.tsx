@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PatrimonyFormProps {
   onSubmit: (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => void;
+  onSubmitWithChapa?: (item: Omit<PatrimonyItem, 'id'>) => void;
   onUpdate: (id: string, item: Partial<PatrimonyItem>) => void;
   existingItems?: PatrimonyItem[];
   suppliers?: Supplier[];
@@ -22,6 +23,7 @@ interface PatrimonyFormProps {
 
 export const PatrimonyForm = ({ 
   onSubmit, 
+  onSubmitWithChapa,
   onUpdate, 
   existingItems = [], 
   suppliers = [], 
@@ -163,8 +165,22 @@ export const PatrimonyForm = ({
         supplierId: formData.supplierId === 'none' ? undefined : formData.supplierId
       };
       onUpdate(itemToUpdate.id, submitData);
+    } else if (searchChapa && !existingItems.find(item => item.numeroChapa === parseInt(searchChapa))) {
+      // Criar novo item com chapa específica
+      const submitData = {
+        ...formData,
+        numeroChapa: parseInt(searchChapa),
+        supplierId: formData.supplierId === 'none' ? undefined : formData.supplierId
+      };
+      console.log('PatrimonyForm - Criando item com chapa específica:', submitData);
+      
+      if (onSubmitWithChapa) {
+        onSubmitWithChapa(submitData);
+      } else {
+        onSubmit(submitData as Omit<PatrimonyItem, 'id' | 'numeroChapa'>);
+      }
     } else {
-      // Criar novo item
+      // Criar novo item com numeração automática
       const submitData = {
         ...formData,
         supplierId: formData.supplierId === 'none' ? undefined : formData.supplierId

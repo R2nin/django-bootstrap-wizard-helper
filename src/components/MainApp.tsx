@@ -101,6 +101,35 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
     console.log('MainApp - Mudando para aba items');
   };
 
+  const handleAddItemWithChapa = (item: Omit<PatrimonyItem, 'id'>) => {
+    console.log('MainApp - handleAddItemWithChapa INICIADO com:', item);
+    console.log('MainApp - Total items ANTES da adição:', items.length);
+    
+    const newItem = addItemWithChapa(item);
+    console.log('MainApp - Item CRIADO com chapa específica:', newItem);
+    
+    addLog(
+      'CREATE',
+      'PATRIMONY',
+      'Novo item adicionado ao patrimônio com chapa específica',
+      currentUser.id,
+      currentUser.fullName,
+      newItem.id,
+      `${newItem.name} (Chapa: ${newItem.numeroChapa})`
+    );
+    
+    toast({
+      title: "Sucesso!",
+      description: `Item "${newItem.name}" adicionado com chapa ${newItem.numeroChapa}.`,
+    });
+    
+    console.log('MainApp - Toast exibido para item:', newItem.name);
+    
+    // Mudar para a aba de itens para mostrar o novo item
+    setActiveTab('items');
+    console.log('MainApp - Mudando para aba items');
+  };
+
   const handleUpdateItem = (id: string, updates: Partial<PatrimonyItem>) => {
     console.log('Atualizando item:', id, updates);
     updateItem(id, updates);
@@ -356,6 +385,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
             {activeTab === 'add' && hasPermission('edit') && (
               <PatrimonyForm
                 onSubmit={handleAddItem}
+                onSubmitWithChapa={handleAddItemWithChapa}
                 onUpdate={handleUpdateItem}
                 existingItems={sortedItems}
                 suppliers={suppliers}
