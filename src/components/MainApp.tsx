@@ -32,6 +32,7 @@ interface MainAppProps {
 
 export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [editingItem, setEditingItem] = useState<PatrimonyItem | null>(null);
   const { items, addItem, updateItem, deleteItem } = usePatrimonyData();
   const { logs, addLog } = useLogData();
   const { users, addUser, deleteUser } = useUserData();
@@ -94,6 +95,10 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         timestamp: new Date().toISOString()
       });
     }
+    
+    // Resetar o item de edição após atualizar
+    setEditingItem(null);
+    setActiveTab('items');
   };
 
   const handleDeleteItem = (id: string) => {
@@ -111,6 +116,11 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         timestamp: new Date().toISOString()
       });
     }
+  };
+
+  const handleEditItem = (item: PatrimonyItem) => {
+    setEditingItem(item);
+    setActiveTab('add');
   };
 
   const handleAddUser = (user: Omit<UserWithRole, 'id' | 'createdAt'>) => {
@@ -257,17 +267,24 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
                 items={items}
                 onUpdate={handleUpdateItem}
                 onDelete={handleDeleteItem}
+                onEdit={handleEditItem}
               />
             )}
 
-        {activeTab === 'add' && hasPermission('edit') && (
-          <PatrimonyForm
-            onSubmit={handleAddItem}
-            onUpdate={handleUpdateItem}
-            existingItems={items}
-            suppliers={suppliers}
-          />
-        )}
+            {activeTab === 'add' && hasPermission('edit') && (
+              <PatrimonyForm
+                onSubmit={handleAddItem}
+                onUpdate={handleUpdateItem}
+                existingItems={items}
+                suppliers={suppliers}
+                editingItem={editingItem}
+                onCancelEdit={() => {
+                  setEditingItem(null);
+                  setActiveTab('items');
+                }}
+              />
+            )}
+
             {activeTab === 'suppliers' && (
               <SupplierList
                 suppliers={suppliers}

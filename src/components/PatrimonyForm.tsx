@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PatrimonyItem } from "@/pages/Index";
 import { Supplier } from "@/types/supplier";
-import { Search, Edit, Plus } from "lucide-react";
+import { Search, Edit, Plus, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PatrimonyFormProps {
@@ -16,11 +16,20 @@ interface PatrimonyFormProps {
   onUpdate: (id: string, item: Partial<PatrimonyItem>) => void;
   existingItems?: PatrimonyItem[];
   suppliers?: Supplier[];
+  editingItem?: PatrimonyItem | null;
+  onCancelEdit?: () => void;
 }
 
-export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], suppliers = [] }: PatrimonyFormProps) => {
+export const PatrimonyForm = ({ 
+  onSubmit, 
+  onUpdate, 
+  existingItems = [], 
+  suppliers = [], 
+  editingItem = null,
+  onCancelEdit 
+}: PatrimonyFormProps) => {
   const [searchChapa, setSearchChapa] = useState('');
-  const [editingItem, setEditingItem] = useState<PatrimonyItem | null>(null);
+  const [foundItem, setFoundItem] = useState<PatrimonyItem | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showEditButton, setShowEditButton] = useState(false);
   
@@ -40,6 +49,29 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
   const uniqueResponsibles = [...new Set(existingItems.map(item => item.responsible).filter(Boolean))];
   const uniqueLocations = [...new Set(existingItems.map(item => item.location).filter(Boolean))];
 
+  // Se está editando um item específico (vindo da lista)
+  useEffect(() => {
+    if (editingItem) {
+      setIsEditing(true);
+      setSearchChapa(editingItem.numeroChapa.toString());
+      setFoundItem(editingItem);
+      setShowEditButton(false);
+      setFormData({
+        name: editingItem.name,
+        category: editingItem.category,
+        location: editingItem.location,
+        acquisitionDate: editingItem.acquisitionDate,
+        value: editingItem.value,
+        status: editingItem.status,
+        description: editingItem.description || '',
+        responsible: editingItem.responsible,
+        supplierId: editingItem.supplierId || 'none'
+      });
+    } else {
+      handleClearForm();
+    }
+  }, [editingItem]);
+
   const getNextChapa = () => {
     if (existingItems.length === 0) return 1001;
     const maxChapa = Math.max(...existingItems.map(item => item.numeroChapa || 0));
@@ -54,12 +86,12 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
     
     if (existingItem) {
       // Item encontrado - mostrar botão de edição
-      setEditingItem(existingItem);
+      setFoundItem(existingItem);
       setShowEditButton(true);
       setIsEditing(false);
     } else {
       // Item não encontrado - modo criação com chapa específica
-      setEditingItem(null);
+      setFoundItem(null);
       setShowEditButton(false);
       setIsEditing(false);
       setFormData({
@@ -77,26 +109,26 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
   };
 
   const handleStartEdit = () => {
-    if (editingItem) {
+    if (foundItem) {
       setIsEditing(true);
       setShowEditButton(false);
       setFormData({
-        name: editingItem.name,
-        category: editingItem.category,
-        location: editingItem.location,
-        acquisitionDate: editingItem.acquisitionDate,
-        value: editingItem.value,
-        status: editingItem.status,
-        description: editingItem.description || '',
-        responsible: editingItem.responsible,
-        supplierId: editingItem.supplierId || 'none'
+        name: foundItem.name,
+        category: foundItem.category,
+        location: foundItem.location,
+        acquisitionDate: foundItem.acquisitionDate,
+        value: foundItem.value,
+        status: foundItem.status,
+        description: foundItem.description || '',
+        responsible: foundItem.responsible,
+        supplierId: foundItem.supplierId || 'none'
       });
     }
   };
 
   const handleClearForm = () => {
     setSearchChapa('');
-    setEditingItem(null);
+    setFoundItem(null);
     setIsEditing(false);
     setShowEditButton(false);
     setFormData({
@@ -112,16 +144,25 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
     });
   };
 
+  const handleCancelEdit = () => {
+    if (editingItem && onCancelEdit) {
+      onCancelEdit();
+    } else {
+      handleClearForm();
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isEditing && editingItem) {
+    if (isEditing && (foundItem || editingItem)) {
       // Atualizar item existente
+      const itemToUpdate = foundItem || editingItem!;
       const submitData = {
         ...formData,
         supplierId: formData.supplierId === 'none' ? undefined : formData.supplierId
       };
-      onUpdate(editingItem.id, submitData);
+      onUpdate(itemToUpdate.id, submitData);
     } else {
       // Criar novo item
       const submitData = {
@@ -131,12 +172,14 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
       onSubmit(submitData);
     }
     
-    handleClearForm();
+    if (!editingItem) {
+      handleClearForm();
+    }
   };
 
   const getCurrentChapa = () => {
-    if (isEditing && editingItem) {
-      return editingItem.numeroChapa;
+    if (isEditing && (foundItem || editingItem)) {
+      return foundItem?.numeroChapa || editingItem?.numeroChapa || 0;
     }
     if (searchChapa && !isNaN(parseInt(searchChapa))) {
       return parseInt(searchChapa);
@@ -156,41 +199,48 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>
+        <CardTitle className="flex items-center justify-between">
           {isEditing ? 'Editar Item do Patrimônio' : 'Buscar/Adicionar Item do Patrimônio'}
+          {editingItem && onCancelEdit && (
+            <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </CardTitle>
         
-        {/* Campo de busca por chapa */}
-        <div className="flex gap-2 items-end">
-          <div className="flex-1">
-            <Label htmlFor="searchChapa">Número da Chapa</Label>
-            <Input
-              id="searchChapa"
-              type="number"
-              value={searchChapa}
-              onChange={(e) => setSearchChapa(e.target.value)}
-              placeholder="Digite o número da chapa para buscar"
-            />
+        {/* Campo de busca por chapa - apenas se não estiver editando item específico */}
+        {!editingItem && (
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <Label htmlFor="searchChapa">Número da Chapa</Label>
+              <Input
+                id="searchChapa"
+                type="number"
+                value={searchChapa}
+                onChange={(e) => setSearchChapa(e.target.value)}
+                placeholder="Digite o número da chapa para buscar"
+              />
+            </div>
+            <Button type="button" onClick={handleSearchChapa} disabled={!searchChapa}>
+              <Search className="h-4 w-4 mr-2" />
+              Buscar
+            </Button>
+            <Button type="button" variant="outline" onClick={handleClearForm}>
+              Limpar
+            </Button>
           </div>
-          <Button type="button" onClick={handleSearchChapa} disabled={!searchChapa}>
-            <Search className="h-4 w-4 mr-2" />
-            Buscar
-          </Button>
-          <Button type="button" variant="outline" onClick={handleClearForm}>
-            Limpar
-          </Button>
-        </div>
+        )}
         
         {/* Mostrar item encontrado e botão de edição */}
-        {showEditButton && editingItem && (
+        {showEditButton && foundItem && (
           <Alert>
             <AlertDescription>
               <div className="flex items-center justify-between">
                 <div>
-                  <strong>Item encontrado:</strong> Chapa {editingItem.numeroChapa} - {editingItem.name}
+                  <strong>Item encontrado:</strong> Chapa {foundItem.numeroChapa} - {foundItem.name}
                   <br />
                   <small className="text-gray-600">
-                    Categoria: {editingItem.category} | Localização: {editingItem.location} | Responsável: {editingItem.responsible}
+                    Categoria: {foundItem.category} | Localização: {foundItem.location} | Responsável: {foundItem.responsible}
                   </small>
                 </div>
                 <Button onClick={handleStartEdit}>
@@ -204,19 +254,19 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
         
         {isEditing && (
           <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
-            Editando item da chapa {editingItem?.numeroChapa}. Você pode alterar ou complementar os dados existentes.
+            Editando item da chapa {getCurrentChapa()}. Você pode alterar ou complementar os dados existentes.
           </div>
         )}
         
-        {searchChapa && !showEditButton && !isEditing && !existingItems.find(item => item.numeroChapa === parseInt(searchChapa)) && (
+        {searchChapa && !showEditButton && !isEditing && !editingItem && !existingItems.find(item => item.numeroChapa === parseInt(searchChapa)) && (
           <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
             Chapa não encontrada. Um novo item será criado com a chapa {searchChapa}.
           </div>
         )}
       </CardHeader>
       
-      {/* Mostrar formulário apenas quando estiver editando ou criando */}
-      {(isEditing || (!showEditButton && searchChapa)) && (
+      {/* Mostrar formulário quando estiver editando, criando ou quando item específico for passado */}
+      {(isEditing || (!showEditButton && searchChapa) || editingItem) && (
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -344,7 +394,7 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
               <Label htmlFor="status">Status</Label>
               <Select 
                 value={formData.status} 
-                onValueChange={(value: PatrimonyItem['status']) => 
+                onValueChange={(value: 'active' | 'maintenance' | 'retired') => 
                   setFormData({ ...formData, status: value })
                 }
               >
@@ -370,19 +420,27 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
               />
             </div>
 
-            <Button type="submit" className="w-full">
-              {isEditing ? (
-                <>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Salvar Alterações
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar ao Patrimônio
-                </>
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1">
+                {isEditing ? (
+                  <>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Salvar Alterações
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar ao Patrimônio
+                  </>
+                )}
+              </Button>
+              
+              {(isEditing || editingItem) && (
+                <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                  Cancelar
+                </Button>
               )}
-            </Button>
+            </div>
           </form>
         </CardContent>
       )}

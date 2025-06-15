@@ -13,9 +13,10 @@ interface PatrimonyListProps {
   items: PatrimonyItem[];
   onUpdate: (id: string, item: Partial<PatrimonyItem>) => void;
   onDelete: (id: string) => void;
+  onEdit: (item: PatrimonyItem) => void;
 }
 
-export const PatrimonyList = ({ items, onUpdate, onDelete }: PatrimonyListProps) => {
+export const PatrimonyList = ({ items, onUpdate, onDelete, onEdit }: PatrimonyListProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<PatrimonyItem | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -98,10 +99,7 @@ export const PatrimonyList = ({ items, onUpdate, onDelete }: PatrimonyListProps)
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            // TODO: Implementar edição
-                            console.log('Edit item:', item.id);
-                          }}
+                          onClick={() => onEdit(item)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
