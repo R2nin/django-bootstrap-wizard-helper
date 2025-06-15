@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Navigation } from "@/components/Navigation";
 import { Dashboard } from "@/components/Dashboard";
@@ -21,10 +20,13 @@ import { PatrimonyItem } from "@/pages/Index";
 type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier';
 
 export const MainApp = () => {
-  console.log('MainApp component rendering');
+  console.log('MainApp component rendering - Start');
   
   const { currentUser, logout, hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
   const [availableLocations, setAvailableLocations] = useState<string[]>([
     'Escritório Central',
     'Almoxarifado',
@@ -44,6 +46,21 @@ export const MainApp = () => {
 
   console.log('MainApp - Hooks loaded, patrimonyItems length:', patrimonyItems.length);
   console.log('MainApp - Suppliers length:', suppliers.length);
+
+  useEffect(() => {
+    try {
+      console.log('MainApp - Initialization effect running');
+      // Simular um pequeno delay para garantir que tudo foi carregado
+      setTimeout(() => {
+        setIsLoading(false);
+        console.log('MainApp - Initialization complete');
+      }, 100);
+    } catch (error) {
+      console.error('MainApp - Initialization error:', error);
+      setError('Erro ao inicializar a aplicação');
+      setIsLoading(false);
+    }
+  }, []);
 
   const handleLocationAdded = (location: string) => {
     if (!availableLocations.includes(location)) {
@@ -146,6 +163,70 @@ export const MainApp = () => {
     return null;
   }
 
+  if (isLoading) {
+    console.log('MainApp - Still loading, showing spinner');
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9fafb'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #3b82f6',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 10px'
+          }}></div>
+          <p>Carregando aplicação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.log('MainApp - Error state, showing error message');
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9fafb'
+      }}>
+        <div style={{ 
+          backgroundColor: 'white',
+          padding: '20px',
+          borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          <h2 style={{ color: '#dc2626', marginBottom: '10px' }}>Erro</h2>
+          <p>{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              padding: '8px 16px',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginTop: '10px'
+            }}
+          >
+            Recarregar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const renderContent = () => {
     console.log('MainApp - Rendering content for tab:', activeTab);
     
@@ -222,7 +303,32 @@ export const MainApp = () => {
       }
     } catch (error) {
       console.error('MainApp - Error rendering content:', error);
-      return <div>Erro ao carregar conteúdo</div>;
+      return (
+        <div style={{ 
+          padding: '20px',
+          textAlign: 'center',
+          backgroundColor: 'white',
+          margin: '20px',
+          borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ color: '#dc2626' }}>Erro ao carregar conteúdo</h3>
+          <p>Ocorreu um erro ao carregar esta seção. Tente novamente.</p>
+          <button 
+            onClick={() => setActiveTab('dashboard')}
+            style={{
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              padding: '8px 16px',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Voltar ao Dashboard
+          </button>
+        </div>
+      );
     }
   };
 
