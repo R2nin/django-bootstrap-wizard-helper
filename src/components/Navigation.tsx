@@ -1,84 +1,96 @@
-import { Button } from "@/components/ui/button";
-import { Plus, Truck, Users, Activity } from "lucide-react";
 
-type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation';
+import { Button } from "@/components/ui/button";
+import { Plus, Package, Users, FileText, Building2, Truck } from "lucide-react";
 
 interface NavigationProps {
-  activeTab: ActiveTab;
-  setActiveTab: (tab: ActiveTab) => void;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
   hasPermission: (action: 'view' | 'edit' | 'delete' | 'admin') => boolean;
 }
 
 export const Navigation = ({ activeTab, setActiveTab, hasPermission }: NavigationProps) => {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex space-x-4 pb-4">
+    <nav className="bg-white border-b px-4 py-2">
+      <div className="flex space-x-2 overflow-x-auto">
         <Button
-          variant={activeTab === 'dashboard' ? 'default' : 'outline'}
+          variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('dashboard')}
+          className="whitespace-nowrap"
         >
           Dashboard
         </Button>
+        
         <Button
-          variant={activeTab === 'items' ? 'default' : 'outline'}
+          variant={activeTab === 'items' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('items')}
+          className="whitespace-nowrap"
         >
+          <Package className="h-4 w-4 mr-2" />
           Patrimônio
         </Button>
+        
         {hasPermission('edit') && (
           <Button
-            variant={activeTab === 'add' ? 'default' : 'outline'}
-            onClick={() => {
-              console.log('Add button clicked, setting activeTab to add');
-              setActiveTab('add');
-            }}
+            variant={activeTab === 'add' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('add')}
+            className="whitespace-nowrap"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Adicionar Item
+            Editar Patrimônio
           </Button>
         )}
+        
         <Button
-          variant={activeTab === 'suppliers' ? 'default' : 'outline'}
+          variant={activeTab === 'suppliers' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('suppliers')}
+          className="whitespace-nowrap"
         >
           <Truck className="h-4 w-4 mr-2" />
           Fornecedores
         </Button>
+        
         {hasPermission('edit') && (
           <Button
-            variant={activeTab === 'addSupplier' ? 'default' : 'outline'}
+            variant={activeTab === 'addSupplier' ? 'default' : 'ghost'}
             onClick={() => setActiveTab('addSupplier')}
+            className="whitespace-nowrap"
           >
             <Plus className="h-4 w-4 mr-2" />
             Adicionar Fornecedor
           </Button>
         )}
-        {hasPermission('admin') && (
-          <>
-            <Button
-              variant={activeTab === 'users' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('users')}
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Usuários
-            </Button>
-            <Button
-              variant={activeTab === 'addUser' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('addUser')}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Usuário
-            </Button>
-          </>
-        )}
+        
         <Button
-          variant={activeTab === 'logs' ? 'default' : 'outline'}
+          variant={activeTab === 'logs' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('logs')}
+          className="whitespace-nowrap"
         >
-          <Activity className="h-4 w-4 mr-2" />
+          <FileText className="h-4 w-4 mr-2" />
           Logs
         </Button>
+        
+        {hasPermission('admin') && (
+          <Button
+            variant={activeTab === 'users' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('users')}
+            className="whitespace-nowrap"
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Usuários
+          </Button>
+        )}
+        
+        {hasPermission('admin') && (
+          <Button
+            variant={activeTab === 'addUser' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('addUser')}
+            className="whitespace-nowrap"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Usuário
+          </Button>
+        )}
       </div>
-    </div>
+    </nav>
   );
 };

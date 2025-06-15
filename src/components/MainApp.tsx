@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Navigation } from './Navigation';
 import { Header } from './Header';
@@ -50,7 +51,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
       case 'view':
         return true;
       case 'edit':
-        return currentUser.role === 'admin';
+        return currentUser.role === 'admin' || currentUser.role === 'user';
       case 'delete':
         return currentUser.role === 'admin';
       case 'admin':
