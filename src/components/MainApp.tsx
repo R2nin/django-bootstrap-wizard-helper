@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navigation } from './Navigation';
 import { Header } from './Header';
@@ -101,7 +100,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   };
 
   const handleDeleteItem = (id: string) => {
-    const deletedItem = items.find(item => id === id);
+    const deletedItem = items.find(item => item.id === id);
     deleteItem(id);
     if (deletedItem) {
       addLog(
@@ -113,6 +112,11 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         id,
         `${deletedItem.name} (Chapa: ${deletedItem.numeroChapa})`
       );
+      
+      toast({
+        title: "Sucesso!",
+        description: "Item removido com sucesso do patrimônio.",
+      })
     }
   };
 

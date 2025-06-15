@@ -55,21 +55,24 @@ export const usePatrimonyData = () => {
       id: Date.now().toString(),
       numeroChapa: getNextChapa()
     };
-    LocalStorage.add('patrimony', newItem);
-    setItems(prev => [...prev, newItem]);
+    const updatedItems = [...items, newItem];
+    LocalStorage.set('patrimony', updatedItems);
+    setItems(updatedItems);
     return newItem;
   };
 
   const updateItem = (id: string, updates: Partial<PatrimonyItem>) => {
-    LocalStorage.update('patrimony', id, updates);
-    setItems(prev => prev.map(item => 
+    const updatedItems = items.map(item => 
       item.id === id ? { ...item, ...updates } : item
-    ));
+    );
+    LocalStorage.set('patrimony', updatedItems);
+    setItems(updatedItems);
   };
 
   const deleteItem = (id: string) => {
-    LocalStorage.delete('patrimony', id);
-    setItems(prev => prev.filter(item => item.id !== id));
+    const updatedItems = items.filter(item => item.id !== id);
+    LocalStorage.set('patrimony', updatedItems);
+    setItems(updatedItems);
   };
 
   return { items, addItem, updateItem, deleteItem };
