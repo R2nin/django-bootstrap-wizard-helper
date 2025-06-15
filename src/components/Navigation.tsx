@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Plus, Package, Users, FileText, Building2, Truck, Upload } from "lucide-react";
+import { Plus, Package, Users, FileText, Building2, Truck, Upload, Book } from "lucide-react";
 
 interface NavigationProps {
   activeTab: string;
@@ -101,6 +101,15 @@ export const Navigation = ({ activeTab, setActiveTab, hasPermission }: Navigatio
             Adicionar Usuário
           </Button>
         )}
+
+        <Button
+          variant={activeTab === 'manual' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('manual')}
+          className="whitespace-nowrap"
+        >
+          <Book className="h-4 w-4 mr-2" />
+          Manual
+        </Button>
       </div>
     </nav>
   );

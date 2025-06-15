@@ -48,9 +48,10 @@ import { LocationForm } from './LocationForm';
 import { toast } from "@/components/ui/use-toast"
 import { Supplier } from '@/types/supplier';
 import { PatrimonyImport } from './PatrimonyImport';
+import { SystemManual } from './SystemManual';
 
 // Definição dos tipos de abas disponíveis no sistema
-type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation' | 'import';
+type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation' | 'import' | 'manual';
 
 interface MainAppProps {
   currentUser: UserWithRole;
@@ -106,11 +107,11 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
       case 'view':
         return true; // Todos podem visualizar
       case 'edit':
-        return currentUser.role === 'admin' || currentUser.role === 'user';
+        return currentUser.role === 'user'; // User também pode editar
       case 'delete':
-        return currentUser.role === 'admin'; // Apenas admin pode deletar
+        return false; // Apenas admin pode deletar (já verificado acima)
       case 'admin':
-        return currentUser.role === 'admin'; // Apenas admin tem acesso a funções administrativas
+        return false; // Apenas admin tem acesso a funções administrativas (já verificado acima)
       default:
         return false;
     }
@@ -559,6 +560,11 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
             {/* ABA NOVO USUÁRIO: Criação de usuários (apenas para admins) */}
             {activeTab === 'addUser' && hasPermission('admin') && (
               <UserForm onSubmit={handleAddUser} />
+            )}
+
+            {/* ABA MANUAL: Manual do usuário */}
+            {activeTab === 'manual' && (
+              <SystemManual />
             )}
           </>
         )}
