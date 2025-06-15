@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,10 @@ const MainApp = () => {
   const { currentUser, logout, hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier'>('dashboard');
   
+  // Debug log para verificar o estado atual
+  console.log('MainApp - Current activeTab:', activeTab);
+  console.log('MainApp - Current user:', currentUser);
+  
   // Usando hooks customizados para persistência local
   const { items: patrimonyItems, addItem: addPatrimonyItem, updateItem: updatePatrimonyItem, deleteItem: deletePatrimonyItem } = usePatrimonyData();
   const { users, addUser } = useUserData();
@@ -46,6 +51,7 @@ const MainApp = () => {
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useSupplierData();
 
   const handleAddPatrimonyItem = (item: Omit<PatrimonyItem, 'id'>) => {
+    console.log('Adding patrimony item:', item);
     const newItem = addPatrimonyItem(item);
     if (currentUser) {
       addLog('CREATE', 'PATRIMONY', `Criou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, newItem.id, item.name);
@@ -104,6 +110,114 @@ const MainApp = () => {
     return <LoginForm />;
   }
 
+  const renderContent = () => {
+    console.log('Rendering content for tab:', activeTab);
+    
+    switch (activeTab) {
+      case 'dashboard':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Dashboard</h2>
+              <PatrimonyReport items={patrimonyItems} />
+            </div>
+            
+            <PatrimonyStats items={patrimonyItems} />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Itens Recentes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {patrimonyItems.slice(0, 5).map((item) => (
+                      <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-sm text-gray-600">{item.location}</p>
+                        </div>
+                        <Badge variant={item.status === 'active' ? 'default' : 'secondary'}>
+                          {item.status === 'active' ? 'Ativo' : 
+                           item.status === 'maintenance' ? 'Manutenção' : 'Inativo'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Categorias Principais</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Array.from(new Set(patrimonyItems.map(item => item.category))).map((category) => {
+                      const count = patrimonyItems.filter(item => item.category === category).length;
+                      return (
+                        <div key={category} className="flex justify-between items-center">
+                          <span className="font-medium">{category}</span>
+                          <Badge variant="outline">{count} itens</Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
+      case 'items':
+        return (
+          <PatrimonyList 
+            items={patrimonyItems}
+            onUpdate={hasPermission('edit') ? handleUpdatePatrimonyItem : undefined}
+            onDelete={hasPermission('delete') ? handleDeletePatrimonyItem : undefined}
+          />
+        );
+
+      case 'add':
+        console.log('Rendering PatrimonyForm with suppliers:', suppliers);
+        return (
+          <PatrimonyForm 
+            onSubmit={handleAddPatrimonyItem} 
+            existingItems={patrimonyItems}
+            suppliers={suppliers}
+          />
+        );
+
+      case 'users':
+        if (!hasPermission('admin')) return null;
+        return <UserList users={users} />;
+
+      case 'addUser':
+        if (!hasPermission('admin')) return null;
+        return <UserForm onSubmit={handleAddUser} />;
+
+      case 'logs':
+        return <LogList logs={logs} />;
+
+      case 'suppliers':
+        return (
+          <SupplierList 
+            suppliers={suppliers}
+            onDelete={hasPermission('delete') ? handleDeleteSupplier : undefined}
+          />
+        );
+
+      case 'addSupplier':
+        if (!hasPermission('edit')) return null;
+        return <SupplierForm onSubmit={handleAddSupplier} />;
+
+      default:
+        console.log('Unknown tab, returning to dashboard');
+        setActiveTab('dashboard');
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -145,7 +259,10 @@ const MainApp = () => {
             {hasPermission('edit') && (
               <Button
                 variant={activeTab === 'add' ? 'default' : 'outline'}
-                onClick={() => setActiveTab('add')}
+                onClick={() => {
+                  console.log('Add button clicked, setting activeTab to add');
+                  setActiveTab('add');
+                }}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Adicionar Item
@@ -198,98 +315,7 @@ const MainApp = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Dashboard</h2>
-              <PatrimonyReport items={patrimonyItems} />
-            </div>
-            
-            <PatrimonyStats items={patrimonyItems} />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Itens Recentes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {patrimonyItems.slice(0, 5).map((item) => (
-                      <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-sm text-gray-600">{item.location}</p>
-                        </div>
-                        <Badge variant={item.status === 'active' ? 'default' : 'secondary'}>
-                          {item.status === 'active' ? 'Ativo' : 
-                           item.status === 'maintenance' ? 'Manutenção' : 'Inativo'}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Categorias Principais</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {Array.from(new Set(patrimonyItems.map(item => item.category))).map((category) => {
-                      const count = patrimonyItems.filter(item => item.category === category).length;
-                      return (
-                        <div key={category} className="flex justify-between items-center">
-                          <span className="font-medium">{category}</span>
-                          <Badge variant="outline">{count} itens</Badge>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'items' && (
-          <PatrimonyList 
-            items={patrimonyItems}
-            onUpdate={hasPermission('edit') ? handleUpdatePatrimonyItem : undefined}
-            onDelete={hasPermission('delete') ? handleDeletePatrimonyItem : undefined}
-          />
-        )}
-
-        {activeTab === 'add' && (
-          <PatrimonyForm 
-            onSubmit={handleAddPatrimonyItem} 
-            existingItems={patrimonyItems}
-            suppliers={suppliers}
-          />
-        )}
-
-        {activeTab === 'users' && hasPermission('admin') && (
-          <UserList users={users} />
-        )}
-
-        {activeTab === 'addUser' && hasPermission('admin') && (
-          <UserForm onSubmit={handleAddUser} />
-        )}
-
-        {activeTab === 'logs' && (
-          <LogList logs={logs} />
-        )}
-
-        {activeTab === 'suppliers' && (
-          <SupplierList 
-            suppliers={suppliers}
-            onDelete={hasPermission('delete') ? handleDeleteSupplier : undefined}
-          />
-        )}
-
-        {activeTab === 'addSupplier' && hasPermission('edit') && (
-          <SupplierForm onSubmit={handleAddSupplier} />
-        )}
+        {renderContent()}
       </main>
     </div>
   );
