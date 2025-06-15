@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navigation } from './Navigation';
 import { Header } from './Header';
@@ -63,16 +62,15 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
 
   const handleAddItem = (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => {
     const newItem = addItem(item);
-    addLog({
-      action: 'CREATE',
-      entity: 'PATRIMONY',
-      entityId: newItem.id,
-      entityName: `${newItem.name} (Chapa: ${newItem.numeroChapa})`,
-      description: 'Novo item adicionado ao patrimônio',
-      userId: currentUser.id,
-      userName: currentUser.fullName,
-      timestamp: new Date().toISOString()
-    });
+    addLog(
+      'CREATE',
+      'PATRIMONY',
+      'Novo item adicionado ao patrimônio',
+      currentUser.id,
+      currentUser.fullName,
+      newItem.id,
+      `${newItem.name} (Chapa: ${newItem.numeroChapa})`
+    );
     toast({
       title: "Sucesso!",
       description: "Item adicionado com sucesso ao patrimônio.",
@@ -84,16 +82,15 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
     
     const updatedItem = items.find(item => item.id === id);
     if (updatedItem) {
-      addLog({
-        action: 'UPDATE',
-        entity: 'PATRIMONY',
-        entityId: id,
-        entityName: `${updatedItem.name} (Chapa: ${updatedItem.numeroChapa})`,
-        description: `Item atualizado: ${Object.keys(updates).join(', ')}`,
-        userId: currentUser.id,
-        userName: currentUser.fullName,
-        timestamp: new Date().toISOString()
-      });
+      addLog(
+        'UPDATE',
+        'PATRIMONY',
+        `Item atualizado: ${Object.keys(updates).join(', ')}`,
+        currentUser.id,
+        currentUser.fullName,
+        id,
+        `${updatedItem.name} (Chapa: ${updatedItem.numeroChapa})`
+      );
     }
     
     // Resetar o item de edição após atualizar
@@ -105,16 +102,15 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
     const deletedItem = items.find(item => item.id === id);
     deleteItem(id);
     if (deletedItem) {
-      addLog({
-        action: 'DELETE',
-        entity: 'PATRIMONY',
-        entityId: id,
-        entityName: `${deletedItem.name} (Chapa: ${deletedItem.numeroChapa})`,
-        description: 'Item removido do patrimônio',
-        userId: currentUser.id,
-        userName: currentUser.fullName,
-        timestamp: new Date().toISOString()
-      });
+      addLog(
+        'DELETE',
+        'PATRIMONY',
+        'Item removido do patrimônio',
+        currentUser.id,
+        currentUser.fullName,
+        id,
+        `${deletedItem.name} (Chapa: ${deletedItem.numeroChapa})`
+      );
     }
   };
 
@@ -125,63 +121,59 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
 
   const handleAddUser = (user: Omit<UserWithRole, 'id' | 'createdAt'>) => {
     const newUser = addUser(user);
-    addLog({
-      action: 'CREATE',
-      entity: 'USER',
-      entityId: newUser.id,
-      entityName: newUser.fullName,
-      description: 'Novo usuário adicionado ao sistema',
-      userId: currentUser.id,
-      userName: currentUser.fullName,
-      timestamp: new Date().toISOString()
-    });
+    addLog(
+      'CREATE',
+      'USER',
+      'Novo usuário adicionado ao sistema',
+      currentUser.id,
+      currentUser.fullName,
+      newUser.id,
+      newUser.fullName
+    );
   };
 
   const handleDeleteUser = (id: string) => {
     const deletedUser = users.find(user => user.id === id);
     deleteUser(id);
     if (deletedUser) {
-      addLog({
-        action: 'DELETE',
-        entity: 'USER',
-        entityId: id,
-        entityName: deletedUser.fullName,
-        description: 'Usuário removido do sistema',
-        userId: currentUser.id,
-        userName: currentUser.fullName,
-        timestamp: new Date().toISOString()
-      });
+      addLog(
+        'DELETE',
+        'USER',
+        'Usuário removido do sistema',
+        currentUser.id,
+        currentUser.fullName,
+        id,
+        deletedUser.fullName
+      );
     }
   };
 
   const handleAddSupplier = (supplier: Omit<Supplier, 'id' | 'createdAt'>) => {
     const newSupplier = addSupplier(supplier);
-     addLog({
-       action: 'CREATE',
-       entity: 'SUPPLIER',
-       entityId: newSupplier.id,
-       entityName: newSupplier.name,
-       description: 'Novo fornecedor adicionado ao sistema',
-       userId: currentUser.id,
-       userName: currentUser.fullName,
-       timestamp: new Date().toISOString()
-     });
+    addLog(
+      'CREATE',
+      'SUPPLIER',
+      'Novo fornecedor adicionado ao sistema',
+      currentUser.id,
+      currentUser.fullName,
+      newSupplier.id,
+      newSupplier.name
+    );
   };
 
   const handleUpdateSupplier = (id: string, updates: Partial<Supplier>) => {
     updateSupplier(id, updates);
     const updatedSupplier = suppliers.find(supplier => supplier.id === id);
     if (updatedSupplier) {
-      addLog({
-        action: 'UPDATE',
-        entity: 'SUPPLIER',
-        entityId: id,
-        entityName: updatedSupplier.name,
-        description: `Fornecedor atualizado: ${Object.keys(updates).join(', ')}`,
-        userId: currentUser.id,
-        userName: currentUser.fullName,
-        timestamp: new Date().toISOString()
-      });
+      addLog(
+        'UPDATE',
+        'SUPPLIER',
+        `Fornecedor atualizado: ${Object.keys(updates).join(', ')}`,
+        currentUser.id,
+        currentUser.fullName,
+        id,
+        updatedSupplier.name
+      );
     }
   };
 
@@ -189,48 +181,45 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
     const deletedSupplier = suppliers.find(supplier => supplier.id === id);
     deleteSupplier(id);
     if (deletedSupplier) {
-       addLog({
-         action: 'DELETE',
-         entity: 'SUPPLIER',
-         entityId: id,
-         entityName: deletedSupplier.name,
-         description: 'Fornecedor removido do sistema',
-         userId: currentUser.id,
-         userName: currentUser.fullName,
-         timestamp: new Date().toISOString()
-       });
+      addLog(
+        'DELETE',
+        'SUPPLIER',
+        'Fornecedor removido do sistema',
+        currentUser.id,
+        currentUser.fullName,
+        id,
+        deletedSupplier.name
+      );
     }
   };
 
   const handleAddLocation = (location: Omit<{ name: string; responsibleId: string; responsibleName: string; }, 'id' | 'createdAt'>) => {
     const newLocation = addLocation(location);
     setIsAddingLocation(false);
-    addLog({
-      action: 'CREATE',
-      entity: 'LOCATION',
-      entityId: newLocation.id,
-      entityName: newLocation.name,
-      description: 'Nova localização adicionada ao sistema',
-      userId: currentUser.id,
-      userName: currentUser.fullName,
-      timestamp: new Date().toISOString()
-    });
+    addLog(
+      'CREATE',
+      'LOCATION',
+      'Nova localização adicionada ao sistema',
+      currentUser.id,
+      currentUser.fullName,
+      newLocation.id,
+      newLocation.name
+    );
   };
 
   const handleDeleteLocation = (id: string) => {
     const deletedLocation = locations.find(location => location.id === id);
     deleteLocation(id);
     if (deletedLocation) {
-      addLog({
-        action: 'DELETE',
-        entity: 'LOCATION',
-        entityId: id,
-        entityName: deletedLocation.name,
-        description: 'Localização removida do sistema',
-        userId: currentUser.id,
-        userName: currentUser.fullName,
-        timestamp: new Date().toISOString()
-      });
+      addLog(
+        'DELETE',
+        'LOCATION',
+        'Localização removida do sistema',
+        currentUser.id,
+        currentUser.fullName,
+        id,
+        deletedLocation.name
+      );
     }
   };
 
