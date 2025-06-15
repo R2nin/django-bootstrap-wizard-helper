@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Navigation } from './Navigation';
 import { Header } from './Header';
@@ -230,23 +231,47 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   };
 
   const handleImportItems = (importedItems: PatrimonyItem[]) => {
-    importedItems.forEach(item => {
-      const newItem = addItemWithChapa(item);
-      addLog(
-        'CREATE',
-        'PATRIMONY',
-        'Item importado do Excel',
-        currentUser.id,
-        currentUser.fullName,
-        newItem.id,
-        `${newItem.name} (Chapa: ${newItem.numeroChapa})`
-      );
+    console.log('Iniciando importação de', importedItems.length, 'itens');
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
+    importedItems.forEach((item, index) => {
+      try {
+        console.log(`Importando item ${index + 1}:`, item);
+        const newItem = addItemWithChapa(item);
+        addLog(
+          'CREATE',
+          'PATRIMONY',
+          'Item importado do Excel',
+          currentUser.id,
+          currentUser.fullName,
+          newItem.id,
+          `${newItem.name} (Chapa: ${newItem.numeroChapa})`
+        );
+        successCount++;
+      } catch (error) {
+        console.error(`Erro ao importar item ${index + 1}:`, error);
+        errorCount++;
+      }
     });
     
-    toast({
-      title: "Sucesso!",
-      description: `${importedItems.length} itens importados com sucesso.`,
-    });
+    console.log(`Importação concluída: ${successCount} sucessos, ${errorCount} erros`);
+    
+    if (successCount > 0) {
+      toast({
+        title: "Sucesso!",
+        description: `${successCount} itens importados com sucesso.`,
+      });
+    }
+    
+    if (errorCount > 0) {
+      toast({
+        title: "Atenção",
+        description: `${errorCount} itens falharam na importação.`,
+        variant: "destructive"
+      });
+    }
     
     setActiveTab('items');
   };

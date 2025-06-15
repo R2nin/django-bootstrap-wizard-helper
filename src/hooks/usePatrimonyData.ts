@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { LocalStorage } from '@/utils/localStorage';
 import { PatrimonyItem } from '@/pages/Index';
@@ -54,35 +55,50 @@ export const usePatrimonyData = () => {
       id: Date.now().toString(),
       numeroChapa: getNextChapa()
     };
-    const updatedItems = [...items, newItem];
-    LocalStorage.set('patrimony', updatedItems);
-    setItems(updatedItems);
+    
+    setItems(currentItems => {
+      const updatedItems = [...currentItems, newItem];
+      LocalStorage.set('patrimony', updatedItems);
+      return updatedItems;
+    });
+    
     return newItem;
   };
 
   const addItemWithChapa = (item: Omit<PatrimonyItem, 'id'>) => {
     const newItem = {
       ...item,
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // ID único
     };
-    const updatedItems = [...items, newItem];
-    LocalStorage.set('patrimony', updatedItems);
-    setItems(updatedItems);
+    
+    console.log('Adicionando item com chapa:', newItem);
+    
+    setItems(currentItems => {
+      const updatedItems = [...currentItems, newItem];
+      console.log('Itens atualizados:', updatedItems.length);
+      LocalStorage.set('patrimony', updatedItems);
+      return updatedItems;
+    });
+    
     return newItem;
   };
 
   const updateItem = (id: string, updates: Partial<PatrimonyItem>) => {
-    const updatedItems = items.map(item => 
-      item.id === id ? { ...item, ...updates } : item
-    );
-    LocalStorage.set('patrimony', updatedItems);
-    setItems(updatedItems);
+    setItems(currentItems => {
+      const updatedItems = currentItems.map(item => 
+        item.id === id ? { ...item, ...updates } : item
+      );
+      LocalStorage.set('patrimony', updatedItems);
+      return updatedItems;
+    });
   };
 
   const deleteItem = (id: string) => {
-    const updatedItems = items.filter(item => item.id !== id);
-    LocalStorage.set('patrimony', updatedItems);
-    setItems(updatedItems);
+    setItems(currentItems => {
+      const updatedItems = currentItems.filter(item => item.id !== id);
+      LocalStorage.set('patrimony', updatedItems);
+      return updatedItems;
+    });
   };
 
   return { items, addItem, addItemWithChapa, updateItem, deleteItem };
