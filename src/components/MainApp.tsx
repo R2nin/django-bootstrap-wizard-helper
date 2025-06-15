@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navigation } from './Navigation';
 import { Header } from './Header';
@@ -80,6 +79,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   };
 
   const handleUpdateItem = (id: string, updates: Partial<PatrimonyItem>) => {
+    console.log('Atualizando item:', id, updates);
     updateItem(id, updates);
     
     const updatedItem = items.find(item => item.id === id);
@@ -94,6 +94,11 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         `${updatedItem.name} (Chapa: ${updatedItem.numeroChapa})`
       );
     }
+    
+    toast({
+      title: "Sucesso!",
+      description: "Item atualizado com sucesso.",
+    });
     
     // Resetar o item de edição após atualizar
     setEditingItem(null);
@@ -280,6 +285,9 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
     setActiveTab(tab as ActiveTab);
   };
 
+  // Ordenar itens por chapa crescente
+  const sortedItems = [...items].sort((a, b) => a.numeroChapa - b.numeroChapa);
+
   return (
     <div className="flex flex-col h-screen">
       <Header currentUser={currentUser} onLogout={onLogout} onAddLocation={() => setIsAddingLocation(true)} />
@@ -305,12 +313,12 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         {!isAddingLocation && (
           <>
             {activeTab === 'dashboard' && (
-              <Dashboard patrimonyItems={items} />
+              <Dashboard patrimonyItems={sortedItems} />
             )}
 
             {activeTab === 'items' && (
               <PatrimonyList
-                items={items}
+                items={sortedItems}
                 onUpdate={handleUpdateItem}
                 onDelete={handleDeleteItem}
                 onEdit={handleEditItem}
@@ -321,7 +329,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
               <PatrimonyForm
                 onSubmit={handleAddItem}
                 onUpdate={handleUpdateItem}
-                existingItems={items}
+                existingItems={sortedItems}
                 suppliers={suppliers}
                 editingItem={editingItem}
                 onCancelEdit={() => {

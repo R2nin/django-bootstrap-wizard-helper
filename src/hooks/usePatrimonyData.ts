@@ -52,13 +52,16 @@ export const usePatrimonyData = () => {
   const addItem = (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => {
     const newItem = {
       ...item,
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       numeroChapa: getNextChapa()
     };
+    
+    console.log('Adicionando novo item:', newItem);
     
     setItems(currentItems => {
       const updatedItems = [...currentItems, newItem];
       LocalStorage.set('patrimony', updatedItems);
+      console.log('Items atualizados no localStorage:', updatedItems.length);
       return updatedItems;
     });
     
@@ -68,15 +71,15 @@ export const usePatrimonyData = () => {
   const addItemWithChapa = (item: Omit<PatrimonyItem, 'id'>) => {
     const newItem = {
       ...item,
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // ID único
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
     };
     
-    console.log('Adicionando item com chapa:', newItem);
+    console.log('Adicionando item com chapa específica:', newItem);
     
     setItems(currentItems => {
       const updatedItems = [...currentItems, newItem];
-      console.log('Itens atualizados:', updatedItems.length);
       LocalStorage.set('patrimony', updatedItems);
+      console.log('Items atualizados no localStorage:', updatedItems.length);
       return updatedItems;
     });
     
@@ -84,19 +87,25 @@ export const usePatrimonyData = () => {
   };
 
   const updateItem = (id: string, updates: Partial<PatrimonyItem>) => {
+    console.log('Atualizando item ID:', id, 'com dados:', updates);
+    
     setItems(currentItems => {
       const updatedItems = currentItems.map(item => 
         item.id === id ? { ...item, ...updates } : item
       );
       LocalStorage.set('patrimony', updatedItems);
+      console.log('Item atualizado no localStorage. Total items:', updatedItems.length);
       return updatedItems;
     });
   };
 
   const deleteItem = (id: string) => {
+    console.log('Deletando item ID:', id);
+    
     setItems(currentItems => {
       const updatedItems = currentItems.filter(item => item.id !== id);
       LocalStorage.set('patrimony', updatedItems);
+      console.log('Item deletado. Total items restantes:', updatedItems.length);
       return updatedItems;
     });
   };
