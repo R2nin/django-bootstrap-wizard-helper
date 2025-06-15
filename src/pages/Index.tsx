@@ -12,8 +12,11 @@ import { UserList } from "@/components/UserList";
 import { LoginForm } from "@/components/LoginForm";
 import { LogList } from "@/components/LogList";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { usePatrimonyData } from "@/hooks/usePatrimonyData";
+import { useUserData } from "@/hooks/useUserData";
+import { useLogData } from "@/hooks/useLogData";
 import { User } from "@/types/user";
-import { UserWithRole, LogEntry } from "@/types/log";
+import { UserWithRole } from "@/types/log";
 
 export interface PatrimonyItem {
   id: string;
@@ -30,135 +33,48 @@ export interface PatrimonyItem {
 const MainApp = () => {
   const { currentUser, logout, hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs'>('dashboard');
-  const [patrimonyItems, setPatrimonyItems] = useState<PatrimonyItem[]>([
-    {
-      id: '1',
-      name: 'Notebook Dell Inspiron',
-      category: 'Informática',
-      location: 'Escritório - Sala 101',
-      acquisitionDate: '2023-01-15',
-      value: 3500,
-      status: 'active',
-      description: 'Notebook para desenvolvimento',
-      responsible: 'João Silva'
-    },
-    {
-      id: '2',
-      name: 'Mesa de Escritório',
-      category: 'Mobiliário',
-      location: 'Escritório - Sala 102',
-      acquisitionDate: '2022-11-20',
-      value: 850,
-      status: 'active',
-      description: 'Mesa executiva em madeira',
-      responsible: 'Maria Santos'
+  
+  // Usando hooks customizados para persistência local
+  const { items: patrimonyItems, addItem: addPatrimonyItem, updateItem: updatePatrimonyItem, deleteItem: deletePatrimonyItem } = usePatrimonyData();
+  const { users, addUser } = useUserData();
+  const { logs, addLog } = useLogData();
+
+  const handleAddPatrimonyItem = (item: Omit<PatrimonyItem, 'id'>) => {
+    const newItem = addPatrimonyItem(item);
+    if (currentUser) {
+      addLog('CREATE', 'PATRIMONY', `Criou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, newItem.id, item.name);
     }
-  ]);
-
-  const [users, setUsers] = useState<UserWithRole[]>([
-    {
-      id: '1',
-      fullName: 'João Silva',
-      email: 'admin@empresa.com',
-      password: 'admin123',
-      role: 'admin',
-      createdAt: '2023-01-10'
-    },
-    {
-      id: '2',
-      fullName: 'Maria Santos',
-      email: 'user@empresa.com',
-      password: 'user123',
-      role: 'user',
-      createdAt: '2023-02-15'
-    }
-  ]);
-
-  const [logs, setLogs] = useState<LogEntry[]>([
-    {
-      id: '1',
-      timestamp: new Date().toISOString(),
-      action: 'LOGIN',
-      entity: 'SYSTEM',
-      userId: '1',
-      userName: 'João Silva',
-      details: 'Usuário fez login no sistema'
-    },
-    {
-      id: '2',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      action: 'CREATE',
-      entity: 'PATRIMONY',
-      entityId: '1',
-      entityName: 'Notebook Dell Inspiron',
-      userId: '1',
-      userName: 'João Silva',
-      details: 'Criou item de patrimônio: Notebook Dell Inspiron'
-    }
-  ]);
-
-  const addLog = (action: LogEntry['action'], entity: LogEntry['entity'], details: string, entityId?: string, entityName?: string) => {
-    if (!currentUser) return;
-    
-    const newLog: LogEntry = {
-      id: Date.now().toString(),
-      timestamp: new Date().toISOString(),
-      action,
-      entity,
-      entityId,
-      entityName,
-      userId: currentUser.id,
-      userName: currentUser.fullName,
-      details
-    };
-    
-    setLogs(prev => [newLog, ...prev]);
-  };
-
-  const addPatrimonyItem = (item: Omit<PatrimonyItem, 'id'>) => {
-    const newItem = {
-      ...item,
-      id: Date.now().toString()
-    };
-    setPatrimonyItems([...patrimonyItems, newItem]);
-    addLog('CREATE', 'PATRIMONY', `Criou item de patrimônio: ${item.name}`, newItem.id, item.name);
     setActiveTab('items');
   };
 
-  const addUser = (user: Omit<User, 'id' | 'createdAt'>) => {
-    const newUser: UserWithRole = {
-      ...user,
-      id: Date.now().toString(),
-      role: 'user',
-      createdAt: new Date().toISOString()
-    };
-    setUsers([...users, newUser]);
-    addLog('CREATE', 'USER', `Criou usuário: ${user.fullName}`, newUser.id, user.fullName);
+  const handleAddUser = (user: Omit<User, 'id' | 'createdAt'>) => {
+    const newUser = addUser(user);
+    if (currentUser) {
+      addLog('CREATE', 'USER', `Criou usuário: ${user.fullName}`, currentUser.id, currentUser.fullName, newUser.id, user.fullName);
+    }
     setActiveTab('users');
   };
 
-  const updatePatrimonyItem = (id: string, updatedItem: Partial<PatrimonyItem>) => {
+  const handleUpdatePatrimonyItem = (id: string, updatedItem: Partial<PatrimonyItem>) => {
     const item = patrimonyItems.find(p => p.id === id);
-    setPatrimonyItems(items => 
-      items.map(item => 
-        item.id === id ? { ...item, ...updatedItem } : item
-      )
-    );
-    if (item) {
-      addLog('UPDATE', 'PATRIMONY', `Editou item de patrimônio: ${item.name}`, id, item.name);
+    updatePatrimonyItem(id, updatedItem);
+    if (item && currentUser) {
+      addLog('UPDATE', 'PATRIMONY', `Editou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, id, item.name);
     }
   };
 
-  const deletePatrimonyItem = (id: string) => {
+  const handleDeletePatrimonyItem = (id: string) => {
     const item = patrimonyItems.find(p => p.id === id);
-    setPatrimonyItems(items => items.filter(item => item.id !== id));
-    if (item) {
-      addLog('DELETE', 'PATRIMONY', `Deletou item de patrimônio: ${item.name}`, id, item.name);
+    deletePatrimonyItem(id);
+    if (item && currentUser) {
+      addLog('DELETE', 'PATRIMONY', `Deletou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, id, item.name);
     }
   };
 
   const handleLogout = () => {
-    addLog('LOGOUT', 'SYSTEM', 'Usuário fez logout do sistema');
+    if (currentUser) {
+      addLog('LOGOUT', 'SYSTEM', 'Usuário fez logout do sistema', currentUser.id, currentUser.fullName);
+    }
     logout();
   };
 
@@ -296,13 +212,13 @@ const MainApp = () => {
         {activeTab === 'items' && (
           <PatrimonyList 
             items={patrimonyItems}
-            onUpdate={hasPermission('edit') ? updatePatrimonyItem : undefined}
-            onDelete={hasPermission('delete') ? deletePatrimonyItem : undefined}
+            onUpdate={hasPermission('edit') ? handleUpdatePatrimonyItem : undefined}
+            onDelete={hasPermission('delete') ? handleDeletePatrimonyItem : undefined}
           />
         )}
 
         {activeTab === 'add' && hasPermission('edit') && (
-          <PatrimonyForm onSubmit={addPatrimonyItem} />
+          <PatrimonyForm onSubmit={handleAddPatrimonyItem} />
         )}
 
         {activeTab === 'users' && hasPermission('admin') && (
@@ -310,7 +226,7 @@ const MainApp = () => {
         )}
 
         {activeTab === 'addUser' && hasPermission('admin') && (
-          <UserForm onSubmit={addUser} />
+          <UserForm onSubmit={handleAddUser} />
         )}
 
         {activeTab === 'logs' && (
@@ -322,28 +238,11 @@ const MainApp = () => {
 };
 
 const Index = () => {
-  // Usuários iniciais com roles
-  const initialUsers: UserWithRole[] = [
-    {
-      id: '1',
-      fullName: 'João Silva',
-      email: 'admin@empresa.com',
-      password: 'admin123',
-      role: 'admin',
-      createdAt: '2023-01-10'
-    },
-    {
-      id: '2',
-      fullName: 'Maria Santos',
-      email: 'user@empresa.com',
-      password: 'user123',
-      role: 'user',
-      createdAt: '2023-02-15'
-    }
-  ];
+  // Carregando usuários do localStorage através do hook
+  const { users } = useUserData();
 
   return (
-    <AuthProvider users={initialUsers}>
+    <AuthProvider users={users}>
       <MainApp />
     </AuthProvider>
   );
