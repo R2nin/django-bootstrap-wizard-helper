@@ -26,7 +26,7 @@ export const PatrimonyList = ({ items, onUpdate, onDelete, onEdit }: PatrimonyLi
     item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.responsible.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.numeroChapa.toString().includes(searchTerm)
+    (item.numeroChapa && item.numeroChapa.toString().includes(searchTerm))
   );
 
   const getStatusBadge = (status: string) => {
