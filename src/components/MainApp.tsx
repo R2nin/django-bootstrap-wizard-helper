@@ -62,7 +62,10 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   };
 
   const handleAddItem = (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => {
+    console.log('MainApp - handleAddItem chamado com:', item);
     const newItem = addItem(item);
+    console.log('MainApp - Item criado:', newItem);
+    
     addLog(
       'CREATE',
       'PATRIMONY',
@@ -72,10 +75,13 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
       newItem.id,
       `${newItem.name} (Chapa: ${newItem.numeroChapa})`
     );
+    
     toast({
       title: "Sucesso!",
       description: "Item adicionado com sucesso ao patrimônio.",
-    })
+    });
+    
+    console.log('MainApp - Total de items após adição:', items.length + 1);
   };
 
   const handleUpdateItem = (id: string, updates: Partial<PatrimonyItem>) => {
@@ -287,6 +293,9 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
 
   // Ordenar itens por chapa crescente
   const sortedItems = [...items].sort((a, b) => a.numeroChapa - b.numeroChapa);
+
+  console.log('MainApp - Total de items atual:', items.length);
+  console.log('MainApp - Items ordenados:', sortedItems.length);
 
   return (
     <div className="flex flex-col h-screen">

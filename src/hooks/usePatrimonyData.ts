@@ -8,6 +8,8 @@ export const usePatrimonyData = () => {
 
   useEffect(() => {
     const savedItems = LocalStorage.get<PatrimonyItem>('patrimony');
+    console.log('usePatrimonyData - Carregando items do localStorage:', savedItems.length);
+    
     if (savedItems.length === 0) {
       // Dados iniciais se não houver nada salvo
       const initialItems: PatrimonyItem[] = [
@@ -38,8 +40,10 @@ export const usePatrimonyData = () => {
       ];
       LocalStorage.set('patrimony', initialItems);
       setItems(initialItems);
+      console.log('usePatrimonyData - Items iniciais criados:', initialItems.length);
     } else {
       setItems(savedItems);
+      console.log('usePatrimonyData - Items carregados:', savedItems.length);
     }
   }, []);
 
@@ -56,14 +60,17 @@ export const usePatrimonyData = () => {
       numeroChapa: getNextChapa()
     };
     
-    console.log('Adicionando novo item:', newItem);
+    console.log('usePatrimonyData - Adicionando novo item:', newItem);
     
-    setItems(currentItems => {
-      const updatedItems = [...currentItems, newItem];
-      LocalStorage.set('patrimony', updatedItems);
-      console.log('Items atualizados no localStorage:', updatedItems.length);
-      return updatedItems;
-    });
+    const updatedItems = [...items, newItem];
+    console.log('usePatrimonyData - Items antes da atualização:', items.length);
+    console.log('usePatrimonyData - Items após criar array:', updatedItems.length);
+    
+    LocalStorage.set('patrimony', updatedItems);
+    console.log('usePatrimonyData - Items salvos no localStorage');
+    
+    setItems(updatedItems);
+    console.log('usePatrimonyData - Estado atualizado com', updatedItems.length, 'items');
     
     return newItem;
   };
@@ -74,41 +81,38 @@ export const usePatrimonyData = () => {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
     };
     
-    console.log('Adicionando item com chapa específica:', newItem);
+    console.log('usePatrimonyData - Adicionando item com chapa específica:', newItem);
     
-    setItems(currentItems => {
-      const updatedItems = [...currentItems, newItem];
-      LocalStorage.set('patrimony', updatedItems);
-      console.log('Items atualizados no localStorage:', updatedItems.length);
-      return updatedItems;
-    });
+    const updatedItems = [...items, newItem];
+    LocalStorage.set('patrimony', updatedItems);
+    setItems(updatedItems);
+    console.log('usePatrimonyData - Items atualizados no localStorage:', updatedItems.length);
     
     return newItem;
   };
 
   const updateItem = (id: string, updates: Partial<PatrimonyItem>) => {
-    console.log('Atualizando item ID:', id, 'com dados:', updates);
+    console.log('usePatrimonyData - Atualizando item ID:', id, 'com dados:', updates);
     
-    setItems(currentItems => {
-      const updatedItems = currentItems.map(item => 
-        item.id === id ? { ...item, ...updates } : item
-      );
-      LocalStorage.set('patrimony', updatedItems);
-      console.log('Item atualizado no localStorage. Total items:', updatedItems.length);
-      return updatedItems;
-    });
+    const updatedItems = items.map(item => 
+      item.id === id ? { ...item, ...updates } : item
+    );
+    
+    LocalStorage.set('patrimony', updatedItems);
+    setItems(updatedItems);
+    console.log('usePatrimonyData - Item atualizado no localStorage. Total items:', updatedItems.length);
   };
 
   const deleteItem = (id: string) => {
-    console.log('Deletando item ID:', id);
+    console.log('usePatrimonyData - Deletando item ID:', id);
     
-    setItems(currentItems => {
-      const updatedItems = currentItems.filter(item => item.id !== id);
-      LocalStorage.set('patrimony', updatedItems);
-      console.log('Item deletado. Total items restantes:', updatedItems.length);
-      return updatedItems;
-    });
+    const updatedItems = items.filter(item => item.id !== id);
+    LocalStorage.set('patrimony', updatedItems);
+    setItems(updatedItems);
+    console.log('usePatrimonyData - Item deletado. Total items restantes:', updatedItems.length);
   };
+
+  console.log('usePatrimonyData - Hook retornando', items.length, 'items');
 
   return { items, addItem, addItemWithChapa, updateItem, deleteItem };
 };
