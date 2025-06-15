@@ -1,23 +1,22 @@
 
-export interface LogEntry {
+export type LogAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT';
+export type LogEntity = 'PATRIMONY' | 'USER' | 'SYSTEM' | 'SUPPLIER';
+
+export interface Log {
   id: string;
-  timestamp: string;
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT';
-  entity: 'PATRIMONY' | 'USER' | 'SYSTEM';
-  entityId?: string;
-  entityName?: string;
+  action: LogAction;
+  entity: LogEntity;
+  description: string;
   userId: string;
   userName: string;
-  details: string;
+  timestamp: string;
+  entityId?: string;
+  entityName?: string;
 }
-
-export type UserRole = 'admin' | 'user';
 
 export interface UserWithRole {
   id: string;
   fullName: string;
   email: string;
-  password: string;
-  role: UserRole;
-  createdAt: string;
+  role: 'admin' | 'user';
 }

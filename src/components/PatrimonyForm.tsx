@@ -7,14 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PatrimonyItem } from "@/pages/Index";
+import { Supplier } from "@/types/supplier";
 
 interface PatrimonyFormProps {
   onSubmit: (item: Omit<PatrimonyItem, 'id'>) => void;
   initialData?: PatrimonyItem;
   existingItems?: PatrimonyItem[];
+  suppliers?: Supplier[];
 }
 
-export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [] }: PatrimonyFormProps) => {
+export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppliers = [] }: PatrimonyFormProps) => {
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     category: initialData?.category || '',
@@ -23,7 +25,8 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [] }: Pat
     value: initialData?.value || 0,
     status: initialData?.status || 'active' as const,
     description: initialData?.description || '',
-    responsible: initialData?.responsible || ''
+    responsible: initialData?.responsible || '',
+    supplierId: initialData?.supplierId || ''
   });
 
   // Extrair dados únicos dos itens existentes
@@ -44,7 +47,8 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [] }: Pat
         value: 0,
         status: 'active',
         description: '',
-        responsible: ''
+        responsible: '',
+        supplierId: ''
       });
     }
   };
@@ -134,6 +138,26 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [] }: Pat
                   ))}
                 </datalist>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplier">Fornecedor</Label>
+              <Select 
+                value={formData.supplierId} 
+                onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um fornecedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sem fornecedor</SelectItem>
+                  {suppliers.map((supplier) => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

@@ -32,6 +32,7 @@ export interface PatrimonyItem {
   status: 'active' | 'maintenance' | 'retired';
   description: string;
   responsible: string;
+  supplierId?: string;
 }
 
 const MainApp = () => {
@@ -263,6 +264,7 @@ const MainApp = () => {
           <PatrimonyForm 
             onSubmit={handleAddPatrimonyItem} 
             existingItems={patrimonyItems}
+            suppliers={suppliers}
           />
         )}
 
