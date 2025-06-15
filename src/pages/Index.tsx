@@ -7,6 +7,9 @@ import { Package, Building, Users, TrendingUp, Plus, Search } from "lucide-react
 import { PatrimonyForm } from "@/components/PatrimonyForm";
 import { PatrimonyList } from "@/components/PatrimonyList";
 import { PatrimonyStats } from "@/components/PatrimonyStats";
+import { UserForm } from "@/components/UserForm";
+import { UserList } from "@/components/UserList";
+import { User } from "@/types/user";
 
 export interface PatrimonyItem {
   id: string;
@@ -21,7 +24,7 @@ export interface PatrimonyItem {
 }
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'items' | 'add'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'items' | 'add' | 'users' | 'addUser'>('dashboard');
   const [patrimonyItems, setPatrimonyItems] = useState<PatrimonyItem[]>([
     {
       id: '1',
@@ -47,6 +50,23 @@ const Index = () => {
     }
   ]);
 
+  const [users, setUsers] = useState<User[]>([
+    {
+      id: '1',
+      fullName: 'João Silva',
+      email: 'joao.silva@empresa.com',
+      password: '123456',
+      createdAt: '2023-01-10'
+    },
+    {
+      id: '2',
+      fullName: 'Maria Santos',
+      email: 'maria.santos@empresa.com',
+      password: '123456',
+      createdAt: '2023-02-15'
+    }
+  ]);
+
   const addPatrimonyItem = (item: Omit<PatrimonyItem, 'id'>) => {
     const newItem = {
       ...item,
@@ -54,6 +74,16 @@ const Index = () => {
     };
     setPatrimonyItems([...patrimonyItems, newItem]);
     setActiveTab('items');
+  };
+
+  const addUser = (user: Omit<User, 'id' | 'createdAt'>) => {
+    const newUser = {
+      ...user,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString()
+    };
+    setUsers([...users, newUser]);
+    setActiveTab('users');
   };
 
   const updatePatrimonyItem = (id: string, updatedItem: Partial<PatrimonyItem>) => {
@@ -98,7 +128,21 @@ const Index = () => {
                 onClick={() => setActiveTab('add')}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Adicionar
+                Adicionar Item
+              </Button>
+              <Button
+                variant={activeTab === 'users' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('users')}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Usuários
+              </Button>
+              <Button
+                variant={activeTab === 'addUser' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('addUser')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Usuário
               </Button>
             </div>
           </div>
@@ -166,6 +210,14 @@ const Index = () => {
 
         {activeTab === 'add' && (
           <PatrimonyForm onSubmit={addPatrimonyItem} />
+        )}
+
+        {activeTab === 'users' && (
+          <UserList users={users} />
+        )}
+
+        {activeTab === 'addUser' && (
+          <UserForm onSubmit={addUser} />
         )}
       </main>
     </div>
