@@ -11,7 +11,7 @@ import { ImportPreview } from "./import/ImportPreview";
 import { ImportInstructions } from "./import/ImportInstructions";
 
 interface PatrimonyImportProps {
-  onImport: (items: Omit<PatrimonyItem, 'id' | 'numeroChapa'>[]) => void;
+  onImport: (items: PatrimonyItem[]) => void;
 }
 
 export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
@@ -65,7 +65,9 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
       return;
     }
 
-    const itemsToImport: Omit<PatrimonyItem, 'id' | 'numeroChapa'>[] = previewData.map(row => ({
+    const itemsToImport: PatrimonyItem[] = previewData.map(row => ({
+      id: '',
+      numeroChapa: row.numeroChapa,
       name: row.name,
       category: 'Outros',
       location: location.trim(),

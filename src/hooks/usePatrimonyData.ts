@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { LocalStorage } from '@/utils/localStorage';
 import { PatrimonyItem } from '@/pages/Index';
@@ -61,6 +60,17 @@ export const usePatrimonyData = () => {
     return newItem;
   };
 
+  const addItemWithChapa = (item: Omit<PatrimonyItem, 'id'>) => {
+    const newItem = {
+      ...item,
+      id: Date.now().toString(),
+    };
+    const updatedItems = [...items, newItem];
+    LocalStorage.set('patrimony', updatedItems);
+    setItems(updatedItems);
+    return newItem;
+  };
+
   const updateItem = (id: string, updates: Partial<PatrimonyItem>) => {
     const updatedItems = items.map(item => 
       item.id === id ? { ...item, ...updates } : item
@@ -75,5 +85,5 @@ export const usePatrimonyData = () => {
     setItems(updatedItems);
   };
 
-  return { items, addItem, updateItem, deleteItem };
+  return { items, addItem, addItemWithChapa, updateItem, deleteItem };
 };

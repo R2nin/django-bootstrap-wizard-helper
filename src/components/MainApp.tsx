@@ -33,7 +33,7 @@ interface MainAppProps {
 export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [editingItem, setEditingItem] = useState<PatrimonyItem | null>(null);
-  const { items, addItem, updateItem, deleteItem } = usePatrimonyData();
+  const { items, addItem, addItemWithChapa, updateItem, deleteItem } = usePatrimonyData();
   const { logs, addLog } = useLogData();
   const { users, addUser, deleteUser } = useUserData();
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useSupplierData();
@@ -229,9 +229,9 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
     }
   };
 
-  const handleImportItems = (importedItems: Omit<PatrimonyItem, 'id' | 'numeroChapa'>[]) => {
+  const handleImportItems = (importedItems: PatrimonyItem[]) => {
     importedItems.forEach(item => {
-      const newItem = addItem(item);
+      const newItem = addItemWithChapa(item);
       addLog(
         'CREATE',
         'PATRIMONY',
