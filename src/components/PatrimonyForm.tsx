@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { ptBR } from 'date-fns/locale';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Supplier } from "@/types/supplier";
-import { UserWithRole } from "@/types/log";
+import { UserWithRole } from "@/types/user";
 import { PatrimonyItem } from "@/pages/Index";
 
 interface PatrimonyFormProps {
@@ -23,6 +23,7 @@ interface PatrimonyFormProps {
   users: UserWithRole[];
   availableLocations: string[];
   availableResponsibles: string[];
+  editingItem?: PatrimonyItem;
 }
 
 export const PatrimonyForm = ({ 
@@ -31,21 +32,22 @@ export const PatrimonyForm = ({
   suppliers, 
   users, 
   availableLocations, 
-  availableResponsibles 
+  availableResponsibles,
+  editingItem 
 }: PatrimonyFormProps) => {
   const [formData, setFormData] = useState({
-    numeroChapa: 0,
-    name: '',
-    category: '',
-    location: '',
-    acquisitionDate: format(new Date(), "yyyy-MM-dd"),
-    value: 0,
-    status: 'active' as 'active' | 'maintenance' | 'retired',
-    description: '',
-    responsible: '',
-    supplierId: undefined
+    numeroChapa: editingItem?.numeroChapa || 0,
+    name: editingItem?.name || '',
+    category: editingItem?.category || '',
+    location: editingItem?.location || '',
+    acquisitionDate: editingItem?.acquisitionDate || format(new Date(), "yyyy-MM-dd"),
+    value: editingItem?.value || 0,
+    status: editingItem?.status || ('active' as 'active' | 'maintenance' | 'retired'),
+    description: editingItem?.description || '',
+    responsible: editingItem?.responsible || '',
+    supplierId: editingItem?.supplierId || undefined
   });
-  const [date, setDate] = useState<Date>(new Date());
+  const [date, setDate] = useState<Date>(editingItem ? new Date(editingItem.acquisitionDate) : new Date());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,24 +79,26 @@ export const PatrimonyForm = ({
       supplierId: formData.supplierId
     });
 
-    setFormData({
-      numeroChapa: 0,
-      name: '',
-      category: '',
-      location: '',
-      acquisitionDate: format(new Date(), "yyyy-MM-dd"),
-      value: 0,
-      status: 'active',
-      description: '',
-      responsible: '',
-      supplierId: undefined
-    });
+    if (!editingItem) {
+      setFormData({
+        numeroChapa: 0,
+        name: '',
+        category: '',
+        location: '',
+        acquisitionDate: format(new Date(), "yyyy-MM-dd"),
+        value: 0,
+        status: 'active',
+        description: '',
+        responsible: '',
+        supplierId: undefined
+      });
+    }
   };
 
   return (
     <Card className="max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Adicionar Novo Item ao Patrimônio</CardTitle>
+        <CardTitle>{editingItem ? 'Editar Item do Patrimônio' : 'Adicionar Novo Item ao Patrimônio'}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -267,7 +271,7 @@ export const PatrimonyForm = ({
           </div>
 
           <div className="flex justify-end">
-            <Button type="submit">Adicionar Item</Button>
+            <Button type="submit">{editingItem ? 'Atualizar Item' : 'Adicionar Item'}</Button>
           </div>
         </form>
       </CardContent>
