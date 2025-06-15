@@ -22,6 +22,13 @@ type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 
 export const MainApp = () => {
   const { currentUser, logout, hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [availableLocations, setAvailableLocations] = useState<string[]>([
+    'Escritório Central',
+    'Almoxarifado',
+    'Sala de Reuniões',
+    'Departamento de TI'
+  ]);
+  const [availableResponsibles, setAvailableResponsibles] = useState<string[]>([]);
   
   // Debug log para verificar o estado atual
   console.log('MainApp - Current activeTab:', activeTab);
@@ -32,6 +39,18 @@ export const MainApp = () => {
   const { users, addUser } = useUserData();
   const { logs, addLog } = useLogData();
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useSupplierData();
+
+  const handleLocationAdded = (location: string) => {
+    if (!availableLocations.includes(location)) {
+      setAvailableLocations(prev => [...prev, location]);
+    }
+  };
+
+  const handleResponsibleAdded = (responsible: string) => {
+    if (!availableResponsibles.includes(responsible)) {
+      setAvailableResponsibles(prev => [...prev, responsible]);
+    }
+  };
 
   const handleAddPatrimonyItem = (item: Omit<PatrimonyItem, 'id'>) => {
     console.log('Adding patrimony item:', item);
@@ -117,6 +136,8 @@ export const MainApp = () => {
             existingItems={patrimonyItems}
             suppliers={suppliers}
             users={users}
+            availableLocations={availableLocations}
+            availableResponsibles={availableResponsibles}
           />
         );
 
@@ -152,7 +173,13 @@ export const MainApp = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header currentUser={currentUser} onLogout={handleLogout} />
+      <Header 
+        currentUser={currentUser} 
+        onLogout={handleLogout}
+        users={users}
+        onLocationAdded={handleLocationAdded}
+        onResponsibleAdded={handleResponsibleAdded}
+      />
       <Navigation 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
