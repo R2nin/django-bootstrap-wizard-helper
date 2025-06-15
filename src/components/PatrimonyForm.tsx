@@ -125,40 +125,36 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
 
             <div className="space-y-2">
               <Label htmlFor="location">Localização</Label>
-              <div className="relative">
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="Ex: Escritório - Sala 101"
-                  required
-                  list="locations-datalist"
-                />
-                <datalist id="locations-datalist">
-                  {uniqueLocations.map((location, index) => (
-                    <option key={index} value={location} />
-                  ))}
-                </datalist>
-              </div>
+              <Input
+                id="location"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="Ex: Escritório - Sala 101"
+                required
+                list="locations-datalist"
+              />
+              <datalist id="locations-datalist">
+                {uniqueLocations.map((location, index) => (
+                  <option key={index} value={location} />
+                ))}
+              </datalist>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="responsible">Responsável</Label>
-              <div className="relative">
-                <Input
-                  id="responsible"
-                  value={formData.responsible}
-                  onChange={(e) => setFormData({ ...formData, responsible: e.target.value })}
-                  placeholder="Ex: João Silva"
-                  required
-                  list="responsibles-datalist"
-                />
-                <datalist id="responsibles-datalist">
-                  {uniqueResponsibles.map((responsible, index) => (
-                    <option key={index} value={responsible} />
-                  ))}
-                </datalist>
-              </div>
+              <Input
+                id="responsible"
+                value={formData.responsible}
+                onChange={(e) => setFormData({ ...formData, responsible: e.target.value })}
+                placeholder="Ex: João Silva"
+                required
+                list="responsibles-datalist"
+              />
+              <datalist id="responsibles-datalist">
+                {uniqueResponsibles.map((responsible, index) => (
+                  <option key={index} value={responsible} />
+                ))}
+              </datalist>
             </div>
 
             <div className="space-y-2">
