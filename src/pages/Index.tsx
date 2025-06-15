@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +16,7 @@ import { useUserData } from "@/hooks/useUserData";
 import { useLogData } from "@/hooks/useLogData";
 import { User } from "@/types/user";
 import { UserWithRole } from "@/types/log";
+import { PatrimonyReport } from "@/components/PatrimonyReport";
 
 export interface PatrimonyItem {
   id: string;
@@ -162,6 +162,11 @@ const MainApp = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Dashboard</h2>
+              <PatrimonyReport items={patrimonyItems} />
+            </div>
+            
             <PatrimonyStats items={patrimonyItems} />
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
