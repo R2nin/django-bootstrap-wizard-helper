@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Navigation } from "@/components/Navigation";
@@ -30,7 +29,7 @@ export const MainApp = () => {
   
   // Usando hooks customizados para persistência local
   const { items: patrimonyItems, addItem: addPatrimonyItem, updateItem: updatePatrimonyItem, deleteItem: deletePatrimonyItem } = usePatrimonyData();
-  const { users, addUser } = useUserData();
+  const { users, addUser, deleteUser } = useUserData();
   const { logs, addLog } = useLogData();
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useSupplierData();
 
@@ -64,6 +63,14 @@ export const MainApp = () => {
     deletePatrimonyItem(id);
     if (item && currentUser) {
       addLog('DELETE', 'PATRIMONY', `Deletou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, id, item.name);
+    }
+  };
+
+  const handleDeleteUser = (id: string) => {
+    const user = users.find(u => u.id === id);
+    deleteUser(id);
+    if (user && currentUser) {
+      addLog('DELETE', 'USER', `Deletou usuário: ${user.fullName}`, currentUser.id, currentUser.fullName, id, user.fullName);
     }
   };
 
@@ -122,7 +129,7 @@ export const MainApp = () => {
 
       case 'users':
         if (!hasPermission('admin')) return null;
-        return <UserList users={users} />;
+        return <UserList users={users} onDelete={hasPermission('delete') ? handleDeleteUser : undefined} />;
 
       case 'addUser':
         if (!hasPermission('admin')) return null;

@@ -47,5 +47,10 @@ export const useUserData = () => {
     return newUser;
   };
 
-  return { users, addUser };
+  const deleteUser = (id: string) => {
+    LocalStorage.delete('users', id);
+    setUsers(prev => prev.filter(user => user.id !== id));
+  };
+
+  return { users, addUser, deleteUser };
 };

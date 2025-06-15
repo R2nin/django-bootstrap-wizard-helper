@@ -3,14 +3,27 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, User as UserIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Search, Mail, User as UserIcon, Trash2 } from "lucide-react";
 import { User } from "@/types/user";
 
 interface UserListProps {
   users: User[];
+  onDelete?: (id: string) => void;
 }
 
-export const UserList = ({ users }: UserListProps) => {
+export const UserList = ({ users, onDelete }: UserListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredUsers = users.filter(user =>
@@ -41,13 +54,41 @@ export const UserList = ({ users }: UserListProps) => {
         {filteredUsers.map((user) => (
           <Card key={user.id} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
-              <div className="flex items-center space-x-3">
-                <div className="bg-blue-100 p-2 rounded-full">
-                  <UserIcon className="h-5 w-5 text-blue-600" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <UserIcon className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">{user.fullName}</CardTitle>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <CardTitle className="text-lg">{user.fullName}</CardTitle>
-                </div>
+                {onDelete && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja excluir o usuário "{user.fullName}"? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => onDelete(user.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             </CardHeader>
             <CardContent>
