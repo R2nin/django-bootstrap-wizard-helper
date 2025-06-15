@@ -41,7 +41,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
 
   useEffect(() => {
     console.log('Active Tab:', activeTab);
-  }, [activeTab]);
+  }, []);
 
   const hasPermission = (action: 'view' | 'edit' | 'delete' | 'admin'): boolean => {
     if (currentUser.role === 'admin') return true;

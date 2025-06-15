@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PatrimonyItem } from "@/pages/Index";
 import { Supplier } from "@/types/supplier";
-import { Search, AlertTriangle } from "lucide-react";
+import { Search, Edit, Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PatrimonyFormProps {
@@ -22,7 +22,7 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
   const [searchChapa, setSearchChapa] = useState('');
   const [editingItem, setEditingItem] = useState<PatrimonyItem | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showEditButton, setShowEditButton] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -53,26 +53,15 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
     const existingItem = existingItems.find(item => item.numeroChapa === chapaNumber);
     
     if (existingItem) {
-      // Item encontrado - modo edição
+      // Item encontrado - mostrar botão de edição
       setEditingItem(existingItem);
-      setIsEditing(true);
-      setShowConfirmation(true);
-      setFormData({
-        name: existingItem.name,
-        category: existingItem.category,
-        location: existingItem.location,
-        acquisitionDate: existingItem.acquisitionDate,
-        value: existingItem.value,
-        status: existingItem.status,
-        description: existingItem.description || '',
-        responsible: existingItem.responsible,
-        supplierId: existingItem.supplierId || 'none'
-      });
+      setShowEditButton(true);
+      setIsEditing(false);
     } else {
       // Item não encontrado - modo criação com chapa específica
       setEditingItem(null);
+      setShowEditButton(false);
       setIsEditing(false);
-      setShowConfirmation(false);
       setFormData({
         name: '',
         category: '',
@@ -87,31 +76,29 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
     }
   };
 
+  const handleStartEdit = () => {
+    if (editingItem) {
+      setIsEditing(true);
+      setShowEditButton(false);
+      setFormData({
+        name: editingItem.name,
+        category: editingItem.category,
+        location: editingItem.location,
+        acquisitionDate: editingItem.acquisitionDate,
+        value: editingItem.value,
+        status: editingItem.status,
+        description: editingItem.description || '',
+        responsible: editingItem.responsible,
+        supplierId: editingItem.supplierId || 'none'
+      });
+    }
+  };
+
   const handleClearForm = () => {
     setSearchChapa('');
     setEditingItem(null);
     setIsEditing(false);
-    setShowConfirmation(false);
-    setFormData({
-      name: '',
-      category: '',
-      location: '',
-      acquisitionDate: '',
-      value: 0,
-      status: 'active',
-      description: '',
-      responsible: '',
-      supplierId: 'none'
-    });
-  };
-
-  const handleConfirmEdit = () => {
-    setShowConfirmation(false);
-  };
-
-  const handleOverwrite = () => {
-    setShowConfirmation(false);
-    // Limpar o formulário para permitir entrada de novos dados
+    setShowEditButton(false);
     setFormData({
       name: '',
       category: '',
@@ -170,7 +157,7 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>
-          {isEditing ? 'Editar Item do Patrimônio' : 'Adicionar/Buscar Item do Patrimônio'}
+          {isEditing ? 'Editar Item do Patrimônio' : 'Buscar/Adicionar Item do Patrimônio'}
         </CardTitle>
         
         {/* Campo de busca por chapa */}
@@ -182,7 +169,7 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
               type="number"
               value={searchChapa}
               onChange={(e) => setSearchChapa(e.target.value)}
-              placeholder="Digite o número da chapa para buscar ou deixe vazio para criar novo"
+              placeholder="Digite o número da chapa para buscar"
             />
           </div>
           <Button type="button" onClick={handleSearchChapa} disabled={!searchChapa}>
@@ -194,195 +181,211 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
           </Button>
         </div>
         
-        {/* Confirmação para edição */}
-        {showConfirmation && isEditing && editingItem && (
+        {/* Mostrar item encontrado e botão de edição */}
+        {showEditButton && editingItem && (
           <Alert>
-            <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Item encontrado! Chapa {editingItem.numeroChapa} - {editingItem.name}
-              <div className="flex gap-2 mt-2">
-                <Button size="sm" onClick={handleConfirmEdit}>
-                  Manter Dados Existentes
-                </Button>
-                <Button size="sm" variant="outline" onClick={handleOverwrite}>
-                  Sobrescrever Dados
+              <div className="flex items-center justify-between">
+                <div>
+                  <strong>Item encontrado:</strong> Chapa {editingItem.numeroChapa} - {editingItem.name}
+                  <br />
+                  <small className="text-gray-600">
+                    Categoria: {editingItem.category} | Localização: {editingItem.location} | Responsável: {editingItem.responsible}
+                  </small>
+                </div>
+                <Button onClick={handleStartEdit}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar Item
                 </Button>
               </div>
             </AlertDescription>
           </Alert>
         )}
         
-        {isEditing && !showConfirmation && (
+        {isEditing && (
           <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
-            Editando item da chapa {editingItem?.numeroChapa}.
+            Editando item da chapa {editingItem?.numeroChapa}. Você pode alterar ou complementar os dados existentes.
           </div>
         )}
         
-        {searchChapa && !isEditing && !existingItems.find(item => item.numeroChapa === parseInt(searchChapa)) && (
+        {searchChapa && !showEditButton && !isEditing && !existingItems.find(item => item.numeroChapa === parseInt(searchChapa)) && (
           <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
             Chapa não encontrada. Um novo item será criado com a chapa {searchChapa}.
           </div>
         )}
       </CardHeader>
       
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="numeroChapa">Número da Chapa</Label>
-              <Input
-                id="numeroChapa"
-                value={getCurrentChapa()}
-                readOnly
-                className="bg-gray-100"
-              />
+      {/* Mostrar formulário apenas quando estiver editando ou criando */}
+      {(isEditing || (!showEditButton && searchChapa)) && (
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="numeroChapa">Número da Chapa</Label>
+                <Input
+                  id="numeroChapa"
+                  value={getCurrentChapa()}
+                  readOnly
+                  className="bg-gray-100"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome do Item</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Ex: Notebook Dell Inspiron"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoria</Label>
+                <Select 
+                  value={formData.category} 
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Localização</Label>
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Ex: Escritório - Sala 101"
+                  required
+                  list="locations-datalist"
+                />
+                <datalist id="locations-datalist">
+                  {uniqueLocations.map((location, index) => (
+                    <option key={index} value={location} />
+                  ))}
+                </datalist>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="responsible">Responsável</Label>
+                <Input
+                  id="responsible"
+                  value={formData.responsible}
+                  onChange={(e) => setFormData({ ...formData, responsible: e.target.value })}
+                  placeholder="Ex: João Silva"
+                  required
+                  list="responsibles-datalist"
+                />
+                <datalist id="responsibles-datalist">
+                  {uniqueResponsibles.map((responsible, index) => (
+                    <option key={index} value={responsible} />
+                  ))}
+                </datalist>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="supplier">Fornecedor</Label>
+                <Select 
+                  value={formData.supplierId} 
+                  onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um fornecedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem fornecedor</SelectItem>
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="acquisitionDate">Data de Aquisição</Label>
+                <Input
+                  id="acquisitionDate"
+                  type="date"
+                  value={formData.acquisitionDate}
+                  onChange={(e) => setFormData({ ...formData, acquisitionDate: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="value">Valor (R$)</Label>
+                <Input
+                  id="value"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.value}
+                  onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
+                  placeholder="0,00"
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name">Nome do Item</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Notebook Dell Inspiron"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
+              <Label htmlFor="status">Status</Label>
               <Select 
-                value={formData.category} 
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                value={formData.status} 
+                onValueChange={(value: PatrimonyItem['status']) => 
+                  setFormData({ ...formData, status: value })
+                }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="active">Ativo</SelectItem>
+                  <SelectItem value="maintenance">Em Manutenção</SelectItem>
+                  <SelectItem value="retired">Inativo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location">Localização</Label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="Ex: Escritório - Sala 101"
-                required
-                list="locations-datalist"
-              />
-              <datalist id="locations-datalist">
-                {uniqueLocations.map((location, index) => (
-                  <option key={index} value={location} />
-                ))}
-              </datalist>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="responsible">Responsável</Label>
-              <Input
-                id="responsible"
-                value={formData.responsible}
-                onChange={(e) => setFormData({ ...formData, responsible: e.target.value })}
-                placeholder="Ex: João Silva"
-                required
-                list="responsibles-datalist"
-              />
-              <datalist id="responsibles-datalist">
-                {uniqueResponsibles.map((responsible, index) => (
-                  <option key={index} value={responsible} />
-                ))}
-              </datalist>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="supplier">Fornecedor</Label>
-              <Select 
-                value={formData.supplierId} 
-                onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um fornecedor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sem fornecedor</SelectItem>
-                  {suppliers.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="acquisitionDate">Data de Aquisição</Label>
-              <Input
-                id="acquisitionDate"
-                type="date"
-                value={formData.acquisitionDate}
-                onChange={(e) => setFormData({ ...formData, acquisitionDate: e.target.value })}
-                required
+              <Label htmlFor="description">Descrição</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Descrição detalhada do item..."
+                rows={3}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="value">Valor (R$)</Label>
-              <Input
-                id="value"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.value}
-                onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
-                placeholder="0,00"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select 
-              value={formData.status} 
-              onValueChange={(value: PatrimonyItem['status']) => 
-                setFormData({ ...formData, status: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Ativo</SelectItem>
-                <SelectItem value="maintenance">Em Manutenção</SelectItem>
-                <SelectItem value="retired">Inativo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Descrição detalhada do item..."
-              rows={3}
-            />
-          </div>
-
-          <Button type="submit" className="w-full" disabled={showConfirmation}>
-            {isEditing ? 'Atualizar Item' : 'Adicionar ao Patrimônio'}
-          </Button>
-        </form>
-      </CardContent>
+            <Button type="submit" className="w-full">
+              {isEditing ? (
+                <>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Salvar Alterações
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar ao Patrimônio
+                </>
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      )}
     </Card>
   );
 };
