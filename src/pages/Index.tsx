@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, Building, Users, TrendingUp, Plus, Search, LogOut, Shield, Activity } from "lucide-react";
+import { Package, Building, Users, TrendingUp, Plus, Search, LogOut, Shield, Activity, Truck } from "lucide-react";
 import { PatrimonyForm } from "@/components/PatrimonyForm";
 import { PatrimonyList } from "@/components/PatrimonyList";
 import { PatrimonyStats } from "@/components/PatrimonyStats";
@@ -10,12 +10,16 @@ import { UserForm } from "@/components/UserForm";
 import { UserList } from "@/components/UserList";
 import { LoginForm } from "@/components/LoginForm";
 import { LogList } from "@/components/LogList";
+import { SupplierForm } from "@/components/SupplierForm";
+import { SupplierList } from "@/components/SupplierList";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { usePatrimonyData } from "@/hooks/usePatrimonyData";
 import { useUserData } from "@/hooks/useUserData";
 import { useLogData } from "@/hooks/useLogData";
+import { useSupplierData } from "@/hooks/useSupplierData";
 import { User } from "@/types/user";
 import { UserWithRole } from "@/types/log";
+import { Supplier } from "@/types/supplier";
 import { PatrimonyReport } from "@/components/PatrimonyReport";
 
 export interface PatrimonyItem {
@@ -32,12 +36,13 @@ export interface PatrimonyItem {
 
 const MainApp = () => {
   const { currentUser, logout, hasPermission } = useAuth();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier'>('dashboard');
   
   // Usando hooks customizados para persistência local
   const { items: patrimonyItems, addItem: addPatrimonyItem, updateItem: updatePatrimonyItem, deleteItem: deletePatrimonyItem } = usePatrimonyData();
   const { users, addUser } = useUserData();
   const { logs, addLog } = useLogData();
+  const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useSupplierData();
 
   const handleAddPatrimonyItem = (item: Omit<PatrimonyItem, 'id'>) => {
     const newItem = addPatrimonyItem(item);
@@ -68,6 +73,22 @@ const MainApp = () => {
     deletePatrimonyItem(id);
     if (item && currentUser) {
       addLog('DELETE', 'PATRIMONY', `Deletou item de patrimônio: ${item.name}`, currentUser.id, currentUser.fullName, id, item.name);
+    }
+  };
+
+  const handleAddSupplier = (supplier: Omit<Supplier, 'id' | 'createdAt'>) => {
+    const newSupplier = addSupplier(supplier);
+    if (currentUser) {
+      addLog('CREATE', 'SUPPLIER', `Criou fornecedor: ${supplier.name}`, currentUser.id, currentUser.fullName, newSupplier.id, supplier.name);
+    }
+    setActiveTab('suppliers');
+  };
+
+  const handleDeleteSupplier = (id: string) => {
+    const supplier = suppliers.find(s => s.id === id);
+    deleteSupplier(id);
+    if (supplier && currentUser) {
+      addLog('DELETE', 'SUPPLIER', `Deletou fornecedor: ${supplier.name}`, currentUser.id, currentUser.fullName, id, supplier.name);
     }
   };
 
@@ -127,6 +148,22 @@ const MainApp = () => {
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Adicionar Item
+              </Button>
+            )}
+            <Button
+              variant={activeTab === 'suppliers' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('suppliers')}
+            >
+              <Truck className="h-4 w-4 mr-2" />
+              Fornecedores
+            </Button>
+            {hasPermission('edit') && (
+              <Button
+                variant={activeTab === 'addSupplier' ? 'default' : 'outline'}
+                onClick={() => setActiveTab('addSupplier')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Fornecedor
               </Button>
             )}
             {hasPermission('admin') && (
@@ -239,6 +276,17 @@ const MainApp = () => {
 
         {activeTab === 'logs' && (
           <LogList logs={logs} />
+        )}
+
+        {activeTab === 'suppliers' && (
+          <SupplierList 
+            suppliers={suppliers}
+            onDelete={hasPermission('delete') ? handleDeleteSupplier : undefined}
+          />
+        )}
+
+        {activeTab === 'addSupplier' && hasPermission('edit') && (
+          <SupplierForm onSubmit={handleAddSupplier} />
         )}
       </main>
     </div>
