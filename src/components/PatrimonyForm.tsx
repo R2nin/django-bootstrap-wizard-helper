@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,15 +7,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PatrimonyItem } from "@/pages/Index";
 import { Supplier } from "@/types/supplier";
+import { LocationManager } from "@/components/LocationManager";
+import { ResponsibleManager } from "@/components/ResponsibleManager";
+import { UserWithRole } from "@/types/log";
 
 interface PatrimonyFormProps {
   onSubmit: (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => void;
   initialData?: PatrimonyItem;
   existingItems?: PatrimonyItem[];
   suppliers?: Supplier[];
+  users?: UserWithRole[];
 }
 
-export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppliers = [] }: PatrimonyFormProps) => {
+export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppliers = [], users = [] }: PatrimonyFormProps) => {
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     category: initialData?.category || '',
@@ -61,6 +64,14 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
         supplierId: 'none'
       });
     }
+  };
+
+  const handleLocationAdded = (location: string) => {
+    setFormData({ ...formData, location });
+  };
+
+  const handleResponsibleAdded = (responsible: string) => {
+    setFormData({ ...formData, responsible });
   };
 
   const categories = [
@@ -124,7 +135,10 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location">Localização</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="location">Localização</Label>
+                <LocationManager onLocationAdded={handleLocationAdded} />
+              </div>
               <div className="relative">
                 <Input
                   id="location"
@@ -143,7 +157,10 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="responsible">Responsável</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="responsible">Responsável</Label>
+                <ResponsibleManager users={users} onResponsibleAdded={handleResponsibleAdded} />
+              </div>
               <div className="relative">
                 <Input
                   id="responsible"

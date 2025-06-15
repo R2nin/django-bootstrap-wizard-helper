@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Navigation } from "@/components/Navigation";
@@ -117,6 +116,7 @@ export const MainApp = () => {
             onSubmit={handleAddPatrimonyItem} 
             existingItems={patrimonyItems}
             suppliers={suppliers}
+            users={users}
           />
         );
 
