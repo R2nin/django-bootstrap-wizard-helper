@@ -10,7 +10,7 @@ import { PatrimonyItem } from "@/pages/Index";
 import { Supplier } from "@/types/supplier";
 
 interface PatrimonyFormProps {
-  onSubmit: (item: Omit<PatrimonyItem, 'id'>) => void;
+  onSubmit: (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => void;
   initialData?: PatrimonyItem;
   existingItems?: PatrimonyItem[];
   suppliers?: Supplier[];
@@ -32,6 +32,12 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
   // Extrair dados únicos dos itens existentes
   const uniqueResponsibles = [...new Set(existingItems.map(item => item.responsible).filter(Boolean))];
   const uniqueLocations = [...new Set(existingItems.map(item => item.location).filter(Boolean))];
+
+  const getNextChapa = () => {
+    if (existingItems.length === 0) return 1001;
+    const maxChapa = Math.max(...existingItems.map(item => item.numeroChapa || 0));
+    return maxChapa + 1;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +82,17 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="numeroChapa">Número da Chapa</Label>
+              <Input
+                id="numeroChapa"
+                value={initialData?.numeroChapa || getNextChapa()}
+                readOnly
+                className="bg-gray-100"
+                placeholder="Será gerado automaticamente"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="name">Nome do Item</Label>
               <Input

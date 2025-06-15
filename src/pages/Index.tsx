@@ -6,6 +6,7 @@ import { useUserData } from "@/hooks/useUserData";
 
 export interface PatrimonyItem {
   id: string;
+  numeroChapa: number;
   name: string;
   category: string;
   location: string;

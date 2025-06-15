@@ -24,7 +24,8 @@ export const PatrimonyList = ({ items, onUpdate, onDelete }: PatrimonyListProps)
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.responsible.toLowerCase().includes(searchTerm.toLowerCase())
+    item.responsible.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.numeroChapa.toString().includes(searchTerm)
   );
 
   const getStatusBadge = (status: string) => {
@@ -53,7 +54,7 @@ export const PatrimonyList = ({ items, onUpdate, onDelete }: PatrimonyListProps)
           <div className="flex items-center space-x-2">
             <Search className="h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Buscar por nome, categoria, localização ou responsável..."
+              placeholder="Buscar por chapa, nome, categoria, localização ou responsável..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="max-w-md"
@@ -65,6 +66,7 @@ export const PatrimonyList = ({ items, onUpdate, onDelete }: PatrimonyListProps)
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Chapa</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Localização</TableHead>
@@ -77,6 +79,7 @@ export const PatrimonyList = ({ items, onUpdate, onDelete }: PatrimonyListProps)
               <TableBody>
                 {filteredItems.map((item) => (
                   <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.numeroChapa}</TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>{item.category}</TableCell>
                     <TableCell>{item.location}</TableCell>

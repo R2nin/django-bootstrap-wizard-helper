@@ -13,6 +13,7 @@ export const usePatrimonyData = () => {
       const initialItems: PatrimonyItem[] = [
         {
           id: '1',
+          numeroChapa: 1001,
           name: 'Notebook Dell Inspiron',
           category: 'Informática',
           location: 'Escritório - Sala 101',
@@ -24,6 +25,7 @@ export const usePatrimonyData = () => {
         },
         {
           id: '2',
+          numeroChapa: 1002,
           name: 'Mesa de Escritório',
           category: 'Mobiliário',
           location: 'Escritório - Sala 102',
@@ -41,10 +43,17 @@ export const usePatrimonyData = () => {
     }
   }, []);
 
-  const addItem = (item: Omit<PatrimonyItem, 'id'>) => {
+  const getNextChapa = () => {
+    if (items.length === 0) return 1001;
+    const maxChapa = Math.max(...items.map(item => item.numeroChapa || 0));
+    return maxChapa + 1;
+  };
+
+  const addItem = (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => {
     const newItem = {
       ...item,
-      id: Date.now().toString()
+      id: Date.now().toString(),
+      numeroChapa: getNextChapa()
     };
     LocalStorage.add('patrimony', newItem);
     setItems(prev => [...prev, newItem]);
