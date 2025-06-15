@@ -7,6 +7,7 @@ export const usePatrimonyData = () => {
   const [items, setItems] = useState<PatrimonyItem[]>([]);
 
   useEffect(() => {
+    console.log('usePatrimonyData - useEffect iniciado');
     const savedItems = LocalStorage.get<PatrimonyItem>('patrimony');
     console.log('usePatrimonyData - Carregando items do localStorage:', savedItems.length);
     
@@ -47,6 +48,14 @@ export const usePatrimonyData = () => {
     }
   }, []);
 
+  // Log sempre que items muda
+  useEffect(() => {
+    console.log('usePatrimonyData - Estado items atualizado. Total:', items.length);
+    items.forEach((item, index) => {
+      console.log(`usePatrimonyData - Item ${index + 1}: ${item.name} (Chapa: ${item.numeroChapa})`);
+    });
+  }, [items]);
+
   const getNextChapa = () => {
     if (items.length === 0) return 1001;
     const maxChapa = Math.max(...items.map(item => item.numeroChapa || 0));
@@ -61,16 +70,22 @@ export const usePatrimonyData = () => {
     };
     
     console.log('usePatrimonyData - Adicionando novo item:', newItem);
+    console.log('usePatrimonyData - Items antes da atualização:', items.length);
     
     const updatedItems = [...items, newItem];
-    console.log('usePatrimonyData - Items antes da atualização:', items.length);
     console.log('usePatrimonyData - Items após criar array:', updatedItems.length);
     
+    // Salvar no localStorage
     LocalStorage.set('patrimony', updatedItems);
     console.log('usePatrimonyData - Items salvos no localStorage');
     
+    // Atualizar estado
     setItems(updatedItems);
-    console.log('usePatrimonyData - Estado atualizado com', updatedItems.length, 'items');
+    console.log('usePatrimonyData - setItems chamado com', updatedItems.length, 'items');
+    
+    // Verificar se foi salvo corretamente
+    const verification = LocalStorage.get<PatrimonyItem>('patrimony');
+    console.log('usePatrimonyData - Verificação localStorage após salvar:', verification.length);
     
     return newItem;
   };
@@ -112,7 +127,7 @@ export const usePatrimonyData = () => {
     console.log('usePatrimonyData - Item deletado. Total items restantes:', updatedItems.length);
   };
 
-  console.log('usePatrimonyData - Hook retornando', items.length, 'items');
+  console.log('usePatrimonyData - Hook retornando', items.length, 'items no render');
 
   return { items, addItem, addItemWithChapa, updateItem, deleteItem };
 };

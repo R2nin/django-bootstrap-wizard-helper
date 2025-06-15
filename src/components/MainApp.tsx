@@ -41,10 +41,16 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   const [isAddingLocation, setIsAddingLocation] = useState(false);
 
   useEffect(() => {
-    console.log('Active Tab:', activeTab);
-  }, []);
+    console.log('MainApp - Componente renderizado, activeTab:', activeTab);
+    console.log('MainApp - Total items no estado:', items.length);
+    items.forEach((item, index) => {
+      console.log(`MainApp - Item ${index + 1}:`, item);
+    });
+  }, [activeTab, items]);
 
   const hasPermission = (action: 'view' | 'edit' | 'delete' | 'admin'): boolean => {
+    console.log('MainApp - Verificando permissão:', action, 'para usuário:', currentUser.role);
+    
     if (currentUser.role === 'admin') return true;
 
     switch (action) {
@@ -62,9 +68,16 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   };
 
   const handleAddItem = (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => {
-    console.log('MainApp - handleAddItem chamado com:', item);
+    console.log('MainApp - handleAddItem INICIADO com:', item);
+    console.log('MainApp - Total items ANTES da adição:', items.length);
+    
     const newItem = addItem(item);
-    console.log('MainApp - Item criado:', newItem);
+    console.log('MainApp - Item CRIADO:', newItem);
+    
+    // Aguardar um pouco para garantir que o estado foi atualizado
+    setTimeout(() => {
+      console.log('MainApp - Total items APÓS adição (timeout):', items.length);
+    }, 100);
     
     addLog(
       'CREATE',
@@ -78,10 +91,14 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
     
     toast({
       title: "Sucesso!",
-      description: "Item adicionado com sucesso ao patrimônio.",
+      description: `Item "${newItem.name}" adicionado com chapa ${newItem.numeroChapa}.`,
     });
     
-    console.log('MainApp - Total de items após adição:', items.length + 1);
+    console.log('MainApp - Toast exibido para item:', newItem.name);
+    
+    // Mudar para a aba de itens para mostrar o novo item
+    setActiveTab('items');
+    console.log('MainApp - Mudando para aba items');
   };
 
   const handleUpdateItem = (id: string, updates: Partial<PatrimonyItem>) => {
@@ -288,6 +305,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   };
 
   const handleTabChange = (tab: string) => {
+    console.log('MainApp - Mudando aba para:', tab);
     setActiveTab(tab as ActiveTab);
   };
 
@@ -296,6 +314,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
 
   console.log('MainApp - Total de items atual:', items.length);
   console.log('MainApp - Items ordenados:', sortedItems.length);
+  console.log('MainApp - Renderizando com aba ativa:', activeTab);
 
   return (
     <div className="flex flex-col h-screen">
