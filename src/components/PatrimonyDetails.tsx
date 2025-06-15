@@ -6,12 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Edit2, Save, X } from "lucide-react";
 import { PatrimonyForm } from "./PatrimonyForm";
+import { Supplier } from "@/types/supplier";
+import { UserWithRole } from "@/types/user";
 
 interface PatrimonyDetailsProps {
   item: PatrimonyItem;
   onUpdate?: (id: string, updatedItem: Partial<PatrimonyItem>) => void;
-  suppliers?: Array<{ id: string; name: string; }>;
-  users?: Array<{ id: string; fullName: string; }>;
+  suppliers?: Supplier[];
+  users?: UserWithRole[];
   availableLocations?: string[];
   availableResponsibles?: string[];
 }
