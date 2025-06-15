@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserWithRole } from '@/types/log';
 
 interface AuthContextType {
@@ -26,6 +26,18 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children, users }: AuthProviderProps) => {
   const [currentUser, setCurrentUser] = useState<UserWithRole | null>(null);
+
+  // Verificar se o usuário atual ainda existe na lista de usuários
+  useEffect(() => {
+    if (currentUser) {
+      const userStillExists = users.find(u => u.id === currentUser.id);
+      if (!userStillExists) {
+        // Se o usuário foi deletado, fazer logout automático
+        console.log('Usuário foi deletado, fazendo logout automático');
+        setCurrentUser(null);
+      }
+    }
+  }, [users, currentUser]);
 
   const login = (email: string, password: string): boolean => {
     const user = users.find(u => u.email === email && u.password === password);
