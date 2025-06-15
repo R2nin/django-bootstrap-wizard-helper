@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Plus, Package, Users, FileText, Building2, Truck } from "lucide-react";
+import { Plus, Package, Users, FileText, Building2, Truck, Upload } from "lucide-react";
 
 interface NavigationProps {
   activeTab: string;
@@ -37,6 +37,17 @@ export const Navigation = ({ activeTab, setActiveTab, hasPermission }: Navigatio
           >
             <Plus className="h-4 w-4 mr-2" />
             Editar Patrimônio
+          </Button>
+        )}
+        
+        {hasPermission('edit') && (
+          <Button
+            variant={activeTab === 'import' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('import')}
+            className="whitespace-nowrap"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Acrescentar Item
           </Button>
         )}
         

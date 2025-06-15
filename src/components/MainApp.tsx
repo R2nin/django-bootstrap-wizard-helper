@@ -22,8 +22,9 @@ import { useLocationData } from '@/hooks/useLocationData';
 import { LocationForm } from './LocationForm';
 import { toast } from "@/components/ui/use-toast"
 import { Supplier } from '@/types/supplier';
+import { PatrimonyImport } from './PatrimonyImport';
 
-type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation';
+type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation' | 'import';
 
 interface MainAppProps {
   currentUser: UserWithRole;
@@ -100,7 +101,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   };
 
   const handleDeleteItem = (id: string) => {
-    const deletedItem = items.find(item => item.id === id);
+    const deletedItem = items.find(item => id === id);
     deleteItem(id);
     if (deletedItem) {
       addLog(
@@ -224,11 +225,37 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
     }
   };
 
+  const handleImportItems = (importedItems: Omit<PatrimonyItem, 'id' | 'numeroChapa'>[]) => {
+    importedItems.forEach(item => {
+      const newItem = addItem(item);
+      addLog(
+        'CREATE',
+        'PATRIMONY',
+        'Item importado do Excel',
+        currentUser.id,
+        currentUser.fullName,
+        newItem.id,
+        `${newItem.name} (Chapa: ${newItem.numeroChapa})`
+      );
+    });
+    
+    toast({
+      title: "Sucesso!",
+      description: `${importedItems.length} itens importados com sucesso.`,
+    });
+    
+    setActiveTab('items');
+  };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab as ActiveTab);
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <Header currentUser={currentUser} onLogout={onLogout} onAddLocation={() => setIsAddingLocation(true)} />
 
-      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} hasPermission={hasPermission} />
+      <Navigation activeTab={activeTab} setActiveTab={handleTabChange} hasPermission={hasPermission} />
 
       <main className="flex-grow overflow-y-auto p-4">
         {isAddingLocation && (
@@ -273,6 +300,10 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
                   setActiveTab('items');
                 }}
               />
+            )}
+
+            {activeTab === 'import' && hasPermission('edit') && (
+              <PatrimonyImport onImport={handleImportItems} />
             )}
 
             {activeTab === 'suppliers' && (
