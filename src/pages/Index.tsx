@@ -218,7 +218,10 @@ const MainApp = () => {
         )}
 
         {activeTab === 'add' && hasPermission('edit') && (
-          <PatrimonyForm onSubmit={handleAddPatrimonyItem} />
+          <PatrimonyForm 
+            onSubmit={handleAddPatrimonyItem} 
+            existingItems={patrimonyItems}
+          />
         )}
 
         {activeTab === 'users' && hasPermission('admin') && (
