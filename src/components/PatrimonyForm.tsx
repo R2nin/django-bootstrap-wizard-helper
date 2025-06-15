@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PatrimonyItem } from "@/pages/Index";
 import { Supplier } from "@/types/supplier";
-import { Search } from "lucide-react";
+import { Search, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PatrimonyFormProps {
   onSubmit: (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => void;
@@ -21,6 +22,7 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
   const [searchChapa, setSearchChapa] = useState('');
   const [editingItem, setEditingItem] = useState<PatrimonyItem | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -28,7 +30,7 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
     location: '',
     acquisitionDate: '',
     value: 0,
-    status: 'active' as 'active' | 'maintenance' | 'retired',
+    status: 'active' as PatrimonyItem['status'],
     description: '',
     responsible: '',
     supplierId: 'none'
@@ -54,6 +56,7 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
       // Item encontrado - modo edição
       setEditingItem(existingItem);
       setIsEditing(true);
+      setShowConfirmation(true);
       setFormData({
         name: existingItem.name,
         category: existingItem.category,
@@ -69,6 +72,7 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
       // Item não encontrado - modo criação com chapa específica
       setEditingItem(null);
       setIsEditing(false);
+      setShowConfirmation(false);
       setFormData({
         name: '',
         category: '',
@@ -87,6 +91,27 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
     setSearchChapa('');
     setEditingItem(null);
     setIsEditing(false);
+    setShowConfirmation(false);
+    setFormData({
+      name: '',
+      category: '',
+      location: '',
+      acquisitionDate: '',
+      value: 0,
+      status: 'active',
+      description: '',
+      responsible: '',
+      supplierId: 'none'
+    });
+  };
+
+  const handleConfirmEdit = () => {
+    setShowConfirmation(false);
+  };
+
+  const handleOverwrite = () => {
+    setShowConfirmation(false);
+    // Limpar o formulário para permitir entrada de novos dados
     setFormData({
       name: '',
       category: '',
@@ -169,9 +194,27 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
           </Button>
         </div>
         
-        {isEditing && (
+        {/* Confirmação para edição */}
+        {showConfirmation && isEditing && editingItem && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Item encontrado! Chapa {editingItem.numeroChapa} - {editingItem.name}
+              <div className="flex gap-2 mt-2">
+                <Button size="sm" onClick={handleConfirmEdit}>
+                  Manter Dados Existentes
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleOverwrite}>
+                  Sobrescrever Dados
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {isEditing && !showConfirmation && (
           <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
-            Item encontrado! Você está editando o item da chapa {editingItem?.numeroChapa}.
+            Editando item da chapa {editingItem?.numeroChapa}.
           </div>
         )}
         
@@ -309,7 +352,7 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
             <Label htmlFor="status">Status</Label>
             <Select 
               value={formData.status} 
-              onValueChange={(value: 'active' | 'maintenance' | 'retired') => 
+              onValueChange={(value: PatrimonyItem['status']) => 
                 setFormData({ ...formData, status: value })
               }
             >
@@ -335,7 +378,7 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
             />
           </div>
 
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full" disabled={showConfirmation}>
             {isEditing ? 'Atualizar Item' : 'Adicionar ao Patrimônio'}
           </Button>
         </form>

@@ -7,26 +7,13 @@ import { PatrimonyForm } from './PatrimonyForm';
 import { LogList } from './LogList';
 import { UserList } from './UserList';
 import { UserForm } from './UserForm';
-import { LoginForm } from './LoginForm';
+import { Dashboard } from './Dashboard';
 import { usePatrimonyData } from '@/hooks/usePatrimonyData';
 import { useLogData } from '@/hooks/useLogData';
 import { useUserData } from '@/hooks/useUserData';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { LogAction, LogEntity, UserWithRole } from '@/types/log';
+import { UserWithRole } from '@/types/log';
 import { PatrimonyItem } from '@/pages/Index';
 import { useSupplierData } from '@/hooks/useSupplierData';
 import { SupplierList } from './SupplierList';
@@ -34,7 +21,6 @@ import { SupplierForm } from './SupplierForm';
 import { useLocationData } from '@/hooks/useLocationData';
 import { LocationForm } from './LocationForm';
 import { toast } from "@/components/ui/use-toast"
-import { LocalStorage } from '@/utils/localStorage';
 import { Supplier } from '@/types/supplier';
 
 type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation';
@@ -48,10 +34,9 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const { items, addItem, updateItem, deleteItem } = usePatrimonyData();
   const { logs, addLog } = useLogData();
-  const { users, addUser, updateUser, deleteUser } = useUserData();
+  const { users, addUser, deleteUser } = useUserData();
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useSupplierData();
   const { locations, addLocation, deleteLocation } = useLocationData();
-  const { login, logout } = useAuth();
   const [isAddingLocation, setIsAddingLocation] = useState(false);
 
   useEffect(() => {
@@ -82,7 +67,10 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
       entity: 'PATRIMONY',
       entityId: newItem.id,
       entityName: `${newItem.name} (Chapa: ${newItem.numeroChapa})`,
-      description: 'Novo item adicionado ao patrimônio'
+      description: 'Novo item adicionado ao patrimônio',
+      userId: currentUser.id,
+      userName: currentUser.fullName,
+      timestamp: new Date().toISOString()
     });
     toast({
       title: "Sucesso!",
@@ -100,7 +88,10 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         entity: 'PATRIMONY',
         entityId: id,
         entityName: `${updatedItem.name} (Chapa: ${updatedItem.numeroChapa})`,
-        description: `Item atualizado: ${Object.keys(updates).join(', ')}`
+        description: `Item atualizado: ${Object.keys(updates).join(', ')}`,
+        userId: currentUser.id,
+        userName: currentUser.fullName,
+        timestamp: new Date().toISOString()
       });
     }
   };
@@ -114,7 +105,10 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         entity: 'PATRIMONY',
         entityId: id,
         entityName: `${deletedItem.name} (Chapa: ${deletedItem.numeroChapa})`,
-        description: 'Item removido do patrimônio'
+        description: 'Item removido do patrimônio',
+        userId: currentUser.id,
+        userName: currentUser.fullName,
+        timestamp: new Date().toISOString()
       });
     }
   };
@@ -126,22 +120,11 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
       entity: 'USER',
       entityId: newUser.id,
       entityName: newUser.fullName,
-      description: 'Novo usuário adicionado ao sistema'
+      description: 'Novo usuário adicionado ao sistema',
+      userId: currentUser.id,
+      userName: currentUser.fullName,
+      timestamp: new Date().toISOString()
     });
-  };
-
-  const handleUpdateUser = (id: string, updates: Partial<UserWithRole>) => {
-    updateUser(id, updates);
-    const updatedUser = users.find(user => user.id === id);
-    if (updatedUser) {
-      addLog({
-        action: 'UPDATE',
-        entity: 'USER',
-        entityId: id,
-        entityName: updatedUser.fullName,
-        description: `Usuário atualizado: ${Object.keys(updates).join(', ')}`
-      });
-    }
   };
 
   const handleDeleteUser = (id: string) => {
@@ -153,7 +136,10 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         entity: 'USER',
         entityId: id,
         entityName: deletedUser.fullName,
-        description: 'Usuário removido do sistema'
+        description: 'Usuário removido do sistema',
+        userId: currentUser.id,
+        userName: currentUser.fullName,
+        timestamp: new Date().toISOString()
       });
     }
   };
@@ -165,7 +151,10 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
        entity: 'SUPPLIER',
        entityId: newSupplier.id,
        entityName: newSupplier.name,
-       description: 'Novo fornecedor adicionado ao sistema'
+       description: 'Novo fornecedor adicionado ao sistema',
+       userId: currentUser.id,
+       userName: currentUser.fullName,
+       timestamp: new Date().toISOString()
      });
   };
 
@@ -178,7 +167,10 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         entity: 'SUPPLIER',
         entityId: id,
         entityName: updatedSupplier.name,
-        description: `Fornecedor atualizado: ${Object.keys(updates).join(', ')}`
+        description: `Fornecedor atualizado: ${Object.keys(updates).join(', ')}`,
+        userId: currentUser.id,
+        userName: currentUser.fullName,
+        timestamp: new Date().toISOString()
       });
     }
   };
@@ -192,7 +184,10 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
          entity: 'SUPPLIER',
          entityId: id,
          entityName: deletedSupplier.name,
-         description: 'Fornecedor removido do sistema'
+         description: 'Fornecedor removido do sistema',
+         userId: currentUser.id,
+         userName: currentUser.fullName,
+         timestamp: new Date().toISOString()
        });
     }
   };
@@ -205,7 +200,10 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
       entity: 'LOCATION',
       entityId: newLocation.id,
       entityName: newLocation.name,
-      description: 'Nova localização adicionada ao sistema'
+      description: 'Nova localização adicionada ao sistema',
+      userId: currentUser.id,
+      userName: currentUser.fullName,
+      timestamp: new Date().toISOString()
     });
   };
 
@@ -218,7 +216,10 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         entity: 'LOCATION',
         entityId: id,
         entityName: deletedLocation.name,
-        description: 'Localização removida do sistema'
+        description: 'Localização removida do sistema',
+        userId: currentUser.id,
+        userName: currentUser.fullName,
+        timestamp: new Date().toISOString()
       });
     }
   };
@@ -248,17 +249,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         {!isAddingLocation && (
           <>
             {activeTab === 'dashboard' && (
-              <Card className="max-w-4xl mx-auto">
-                <CardHeader>
-                  <CardTitle>Dashboard</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600">
-                    Bem-vindo ao Sistema de Gestão Patrimonial. Utilize os menus acima para navegar
-                    entre as funcionalidades.
-                  </p>
-                </CardContent>
-              </Card>
+              <Dashboard patrimonyItems={items} />
             )}
 
             {activeTab === 'items' && (
@@ -298,7 +289,6 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
             {activeTab === 'users' && hasPermission('admin') && (
               <UserList
                 users={users}
-                onUpdate={handleUpdateUser}
                 onDelete={handleDeleteUser}
               />
             )}
