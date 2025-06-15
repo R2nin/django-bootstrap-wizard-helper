@@ -8,6 +8,7 @@ import { Upload, FileSpreadsheet, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PatrimonyItem } from "@/pages/Index";
 import { toast } from "@/components/ui/use-toast";
+import * as XLSX from 'xlsx';
 
 interface PatrimonyImportProps {
   onImport: (items: Omit<PatrimonyItem, 'id' | 'numeroChapa'>[]) => void;
@@ -30,7 +31,9 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
     if (selectedFile) {
       if (selectedFile.type === 'application/vnd.ms-excel' || 
           selectedFile.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-          selectedFile.name.endsWith('.csv')) {
+          selectedFile.name.endsWith('.csv') ||
+          selectedFile.name.endsWith('.xlsx') ||
+          selectedFile.name.endsWith('.xls')) {
         setFile(selectedFile);
         setPreviewData([]);
       } else {
@@ -56,50 +59,74 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
     setIsProcessing(true);
 
     try {
-      const text = await file.text();
-      const lines = text.split('\n').filter(line => line.trim());
-      
-      if (lines.length === 0) {
-        throw new Error('Arquivo vazio');
-      }
+      let parsedData: ExcelRow[] = [];
 
-      const parsedData: ExcelRow[] = [];
-      
-      // Skip header if it exists (check if first row contains non-numeric first column)
-      const startIndex = isNaN(Number(lines[0].split(/[,;\t]/)[0])) ? 1 : 0;
-      
-      for (let i = startIndex; i < lines.length; i++) {
-        const columns = lines[i].split(/[,;\t]/).map(col => col.trim().replace(/"/g, ''));
+      if (file.name.endsWith('.csv')) {
+        // Processar arquivo CSV
+        const text = await file.text();
+        const lines = text.split('\n').filter(line => line.trim());
         
-        if (columns.length >= 3) {
-          const numeroChapa = parseInt(columns[0]);
-          const acquisitionDate = columns[1];
-          const name = columns[2];
+        if (lines.length === 0) {
+          throw new Error('Arquivo vazio');
+        }
 
-          if (!isNaN(numeroChapa) && acquisitionDate && name) {
-            // Try to parse the date in various formats
-            let formattedDate = acquisitionDate;
-            try {
-              // If it's in DD/MM/YYYY format, convert to YYYY-MM-DD
-              if (acquisitionDate.includes('/')) {
-                const [day, month, year] = acquisitionDate.split('/');
-                formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-              }
-              // Validate the date
-              const dateObj = new Date(formattedDate);
-              if (isNaN(dateObj.getTime())) {
-                throw new Error('Invalid date');
-              }
-            } catch {
-              // If date parsing fails, use current date
-              formattedDate = new Date().toISOString().split('T')[0];
+        // Skip header if it exists (check if first row contains non-numeric first column)
+        const startIndex = isNaN(Number(lines[0].split(/[,;\t]/)[0])) ? 1 : 0;
+        
+        for (let i = startIndex; i < lines.length; i++) {
+          const columns = lines[i].split(/[,;\t]/).map(col => col.trim().replace(/"/g, ''));
+          
+          if (columns.length >= 3) {
+            const numeroChapa = parseInt(columns[0]);
+            const acquisitionDate = columns[1];
+            const name = columns[2];
+
+            if (!isNaN(numeroChapa) && acquisitionDate && name) {
+              let formattedDate = formatDate(acquisitionDate);
+              parsedData.push({
+                numeroChapa,
+                acquisitionDate: formattedDate,
+                name
+              });
             }
+          }
+        }
+      } else {
+        // Processar arquivo Excel (.xlsx, .xls)
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        
+        // Pegar a primeira planilha
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
+        // Converter para JSON
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        if (jsonData.length === 0) {
+          throw new Error('Planilha vazia');
+        }
 
-            parsedData.push({
-              numeroChapa,
-              acquisitionDate: formattedDate,
-              name
-            });
+        // Determinar se há cabeçalho
+        const firstRow = jsonData[0] as any[];
+        const startIndex = (firstRow.length >= 3 && isNaN(Number(firstRow[0]))) ? 1 : 0;
+        
+        for (let i = startIndex; i < jsonData.length; i++) {
+          const row = jsonData[i] as any[];
+          
+          if (row && row.length >= 3 && row[0] !== undefined && row[1] !== undefined && row[2] !== undefined) {
+            const numeroChapa = parseInt(String(row[0]));
+            const acquisitionDate = String(row[1]);
+            const name = String(row[2]);
+
+            if (!isNaN(numeroChapa) && acquisitionDate && name) {
+              let formattedDate = formatDate(acquisitionDate);
+              parsedData.push({
+                numeroChapa,
+                acquisitionDate: formattedDate,
+                name: name.trim()
+              });
+            }
           }
         }
       }
@@ -108,6 +135,7 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
         throw new Error('Nenhum dado válido encontrado no arquivo');
       }
 
+      console.log('Dados processados:', parsedData);
       setPreviewData(parsedData);
       
     } catch (error) {
@@ -122,6 +150,47 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
     }
   };
 
+  const formatDate = (dateValue: string): string => {
+    try {
+      // Se é uma data do Excel (número serial)
+      if (!isNaN(Number(dateValue))) {
+        const excelDate = XLSX.SSF.parse_date_code(Number(dateValue));
+        if (excelDate) {
+          const year = excelDate.y;
+          const month = String(excelDate.m).padStart(2, '0');
+          const day = String(excelDate.d).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+      }
+      
+      // Se está em formato DD/MM/YYYY
+      if (dateValue.includes('/')) {
+        const [day, month, year] = dateValue.split('/');
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      
+      // Se está em formato DD-MM-YYYY
+      if (dateValue.includes('-') && dateValue.length === 10) {
+        const parts = dateValue.split('-');
+        if (parts[0].length === 2) {
+          // DD-MM-YYYY
+          return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+      }
+      
+      // Tentar validar a data
+      const dateObj = new Date(dateValue);
+      if (!isNaN(dateObj.getTime())) {
+        return dateValue;
+      }
+      
+      throw new Error('Invalid date format');
+    } catch {
+      // Se não conseguir converter, usar data atual
+      return new Date().toISOString().split('T')[0];
+    }
+  };
+
   const handleImport = () => {
     if (previewData.length === 0) {
       return;
@@ -129,10 +198,10 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
 
     const itemsToImport: Omit<PatrimonyItem, 'id' | 'numeroChapa'>[] = previewData.map(row => ({
       name: row.name,
-      category: 'Outros', // Default category
+      category: 'Outros',
       location: location.trim(),
       acquisitionDate: row.acquisitionDate,
-      value: 0, // Default value
+      value: 0,
       status: 'active' as const,
       description: `Importado do arquivo: ${file?.name}`,
       responsible: 'A definir'
@@ -160,7 +229,7 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
           <AlertDescription>
             <strong>Formato esperado:</strong><br/>
             • Coluna 1: Número da Chapa<br/>
-            • Coluna 2: Data de Aquisição (DD/MM/YYYY ou YYYY-MM-DD)<br/>
+            • Coluna 2: Data de Aquisição (DD/MM/YYYY, DD-MM-YYYY ou formato Excel)<br/>
             • Coluna 3: Nome do Item<br/>
             Arquivos suportados: .xlsx, .xls, .csv
           </AlertDescription>
