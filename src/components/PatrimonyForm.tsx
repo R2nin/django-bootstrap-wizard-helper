@@ -26,7 +26,7 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
     status: initialData?.status || 'active' as const,
     description: initialData?.description || '',
     responsible: initialData?.responsible || '',
-    supplierId: initialData?.supplierId || ''
+    supplierId: initialData?.supplierId || 'none'
   });
 
   // Extrair dados únicos dos itens existentes
@@ -35,7 +35,11 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    const submitData = {
+      ...formData,
+      supplierId: formData.supplierId === 'none' ? undefined : formData.supplierId
+    };
+    onSubmit(submitData);
     
     // Reset form if not editing
     if (!initialData) {
@@ -48,7 +52,7 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
         status: 'active',
         description: '',
         responsible: '',
-        supplierId: ''
+        supplierId: 'none'
       });
     }
   };
@@ -150,7 +154,7 @@ export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppl
                   <SelectValue placeholder="Selecione um fornecedor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sem fornecedor</SelectItem>
+                  <SelectItem value="none">Sem fornecedor</SelectItem>
                   {suppliers.map((supplier) => (
                     <SelectItem key={supplier.id} value={supplier.id}>
                       {supplier.name}
