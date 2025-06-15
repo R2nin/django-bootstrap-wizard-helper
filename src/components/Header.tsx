@@ -1,14 +1,15 @@
 
 import { Button } from "@/components/ui/button";
-import { Package, Shield, LogOut } from "lucide-react";
+import { Package, Shield, LogOut, MapPin } from "lucide-react";
 import { UserWithRole } from "@/types/log";
 
 interface HeaderProps {
   currentUser: UserWithRole;
   onLogout: () => void;
+  onAddLocation: () => void;
 }
 
-export const Header = ({ currentUser, onLogout }: HeaderProps) => {
+export const Header = ({ currentUser, onLogout, onAddLocation }: HeaderProps) => {
   return (
     <header className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,6 +21,10 @@ export const Header = ({ currentUser, onLogout }: HeaderProps) => {
             </h1>
           </div>
           <div className="flex items-center space-x-4">
+            <Button variant="outline" onClick={onAddLocation}>
+              <MapPin className="h-4 w-4 mr-2" />
+              + Nova Localização
+            </Button>
             <div className="flex items-center space-x-2">
               <Shield className="h-4 w-4 text-gray-600" />
               <span className="text-sm text-gray-600">

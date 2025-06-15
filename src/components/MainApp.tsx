@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Navigation } from "@/components/Navigation";
@@ -9,15 +10,17 @@ import { UserList } from "@/components/UserList";
 import { LogList } from "@/components/LogList";
 import { SupplierForm } from "@/components/SupplierForm";
 import { SupplierList } from "@/components/SupplierList";
+import { LocationForm } from "@/components/LocationForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePatrimonyData } from "@/hooks/usePatrimonyData";
 import { useUserData } from "@/hooks/useUserData";
 import { useLogData } from "@/hooks/useLogData";
 import { useSupplierData } from "@/hooks/useSupplierData";
+import { useLocationData } from "@/hooks/useLocationData";
 import { User } from "@/types/user";
 import { PatrimonyItem } from "@/pages/Index";
 
-type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier';
+type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation';
 
 export const MainApp = () => {
   const { currentUser, logout, hasPermission } = useAuth();
@@ -32,6 +35,7 @@ export const MainApp = () => {
   const { users, addUser, deleteUser } = useUserData();
   const { logs, addLog } = useLogData();
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useSupplierData();
+  const { locations, addLocation } = useLocationData();
 
   const handleAddPatrimonyItem = (item: Omit<PatrimonyItem, 'id'>) => {
     console.log('Adding patrimony item:', item);
@@ -90,11 +94,23 @@ export const MainApp = () => {
     }
   };
 
+  const handleAddLocation = (location: Omit<any, 'id' | 'createdAt'>) => {
+    const newLocation = addLocation(location);
+    if (currentUser) {
+      addLog('CREATE', 'LOCATION', `Criou localização: ${location.name} - Responsável: ${location.responsibleName}`, currentUser.id, currentUser.fullName, newLocation.id, location.name);
+    }
+    setActiveTab('dashboard');
+  };
+
   const handleLogout = () => {
     if (currentUser) {
       addLog('LOGOUT', 'SYSTEM', 'Usuário fez logout do sistema', currentUser.id, currentUser.fullName);
     }
     logout();
+  };
+
+  const handleShowLocationForm = () => {
+    setActiveTab('addLocation');
   };
 
   if (!currentUser) {
@@ -150,6 +166,16 @@ export const MainApp = () => {
         if (!hasPermission('edit')) return null;
         return <SupplierForm onSubmit={handleAddSupplier} />;
 
+      case 'addLocation':
+        if (!hasPermission('edit')) return null;
+        return (
+          <LocationForm 
+            onSubmit={handleAddLocation} 
+            users={users}
+            onCancel={() => setActiveTab('dashboard')}
+          />
+        );
+
       default:
         console.log('Unknown tab, returning to dashboard');
         setActiveTab('dashboard');
@@ -159,7 +185,11 @@ export const MainApp = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header currentUser={currentUser} onLogout={handleLogout} />
+      <Header 
+        currentUser={currentUser} 
+        onLogout={handleLogout} 
+        onAddLocation={handleShowLocationForm}
+      />
       <Navigation 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
