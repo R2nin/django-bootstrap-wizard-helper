@@ -1,15 +1,16 @@
+
 import { useState, useEffect } from 'react';
 import { Navigation } from './Navigation';
 import { Header } from './Header';
 import { PatrimonyList } from './PatrimonyList';
 import { PatrimonyForm } from './PatrimonyForm';
-import { LogsList } from './LogsList';
-import { UsersList } from './UsersList';
+import { LogList } from './LogList';
+import { UserList } from './UserList';
 import { UserForm } from './UserForm';
 import { LoginForm } from './LoginForm';
 import { usePatrimonyData } from '@/hooks/usePatrimonyData';
-import { useLogsData } from '@/hooks/useLogsData';
-import { useUsersData } from '@/hooks/useUsersData';
+import { useLogData } from '@/hooks/useLogData';
+import { useUserData } from '@/hooks/useUserData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,9 +26,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { LogAction, LogEntity, PatrimonyItem, UserWithRole } from '@/types/log';
+import { LogAction, LogEntity, UserWithRole } from '@/types/log';
+import { PatrimonyItem } from '@/pages/Index';
 import { useSupplierData } from '@/hooks/useSupplierData';
-import { SuppliersList } from './SuppliersList';
+import { SupplierList } from './SupplierList';
 import { SupplierForm } from './SupplierForm';
 import { useLocationData } from '@/hooks/useLocationData';
 import { LocationForm } from './LocationForm';
@@ -45,8 +47,8 @@ interface MainAppProps {
 export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const { items, addItem, updateItem, deleteItem } = usePatrimonyData();
-  const { logs, addLog } = useLogsData();
-  const { users, addUser, updateUser, deleteUser } = useUsersData();
+  const { logs, addLog } = useLogData();
+  const { users, addUser, updateUser, deleteUser } = useUserData();
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useSupplierData();
   const { locations, addLocation, deleteLocation } = useLocationData();
   const { login, logout } = useAuth();
@@ -234,7 +236,11 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
               <CardTitle>Adicionar Nova Localização</CardTitle>
             </CardHeader>
             <CardContent>
-              <LocationForm onSubmit={handleAddLocation} />
+              <LocationForm 
+                onSubmit={handleAddLocation} 
+                users={users} 
+                onCancel={() => setIsAddingLocation(false)} 
+              />
             </CardContent>
           </Card>
         )}
@@ -272,7 +278,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
           />
         )}
             {activeTab === 'suppliers' && (
-              <SuppliersList
+              <SupplierList
                 suppliers={suppliers}
                 onUpdate={handleUpdateSupplier}
                 onDelete={handleDeleteSupplier}
@@ -286,11 +292,11 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
             )}
 
             {activeTab === 'logs' && (
-              <LogsList logs={logs} />
+              <LogList logs={logs} />
             )}
 
             {activeTab === 'users' && hasPermission('admin') && (
-              <UsersList
+              <UserList
                 users={users}
                 onUpdate={handleUpdateUser}
                 onDelete={handleDeleteUser}

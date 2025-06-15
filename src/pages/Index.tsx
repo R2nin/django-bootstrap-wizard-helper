@@ -19,13 +19,13 @@ export interface PatrimonyItem {
 }
 
 const AppContent = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
   
   if (!currentUser) {
     return <LoginForm />;
   }
 
-  return <MainApp />;
+  return <MainApp currentUser={currentUser} onLogout={logout} />;
 };
 
 const Index = () => {

@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { X, Edit, Calendar, MapPin, User, Package, DollarSign, Hash } from "lucide-react";
 import { PatrimonyItem } from "@/pages/Index";
-import { PatrimonyForm } from "@/components/PatrimonyForm";
 
 interface PatrimonyDetailsProps {
   item: PatrimonyItem;
@@ -33,30 +32,6 @@ export const PatrimonyDetails = ({ item, onClose, onUpdate }: PatrimonyDetailsPr
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
-
-  if (isEditing) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-4 border-b flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Editar Item</h2>
-            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="p-4">
-            <PatrimonyForm
-              initialData={item}
-              onSubmit={(updatedItem) => {
-                onUpdate(updatedItem);
-                setIsEditing(false);
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

@@ -28,7 +28,7 @@ export const PatrimonyForm = ({ onSubmit, onUpdate, existingItems = [], supplier
     location: '',
     acquisitionDate: '',
     value: 0,
-    status: 'active' as const,
+    status: 'active' as 'active' | 'maintenance' | 'retired',
     description: '',
     responsible: '',
     supplierId: 'none'
