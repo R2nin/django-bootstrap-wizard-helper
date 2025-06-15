@@ -53,10 +53,10 @@ const MainApp = () => {
     setActiveTab('items');
   };
 
-  const handleAddUser = (user: Omit<User, 'id' | 'createdAt'>) => {
+  const handleAddUser = (user: Omit<User, 'id' | 'createdAt'> & { role: 'admin' | 'user' }) => {
     const newUser = addUser(user);
     if (currentUser) {
-      addLog('CREATE', 'USER', `Criou usuário: ${user.fullName}`, currentUser.id, currentUser.fullName, newUser.id, user.fullName);
+      addLog('CREATE', 'USER', `Criou usuário: ${user.fullName} (${user.role === 'admin' ? 'Administrador' : 'Usuário'})`, currentUser.id, currentUser.fullName, newUser.id, user.fullName);
     }
     setActiveTab('users');
   };

@@ -4,17 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { User } from "@/types/user";
 
 interface UserFormProps {
-  onSubmit: (user: Omit<User, 'id' | 'createdAt'>) => void;
+  onSubmit: (user: Omit<User, 'id' | 'createdAt'> & { role: 'admin' | 'user' }) => void;
 }
 
 export const UserForm = ({ onSubmit }: UserFormProps) => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    password: ''
+    password: '',
+    role: 'user' as 'admin' | 'user'
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -29,7 +31,8 @@ export const UserForm = ({ onSubmit }: UserFormProps) => {
     setFormData({
       fullName: '',
       email: '',
-      password: ''
+      password: '',
+      role: 'user'
     });
   };
 
@@ -75,6 +78,28 @@ export const UserForm = ({ onSubmit }: UserFormProps) => {
                 placeholder="Digite uma senha segura"
                 required
               />
+            </div>
+
+            <div>
+              <Label>Tipo de Usuário *</Label>
+              <RadioGroup 
+                value={formData.role} 
+                onValueChange={(value: 'admin' | 'user') => setFormData({ ...formData, role: value })}
+                className="flex flex-col space-y-2 mt-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="user" id="user" />
+                  <Label htmlFor="user" className="font-normal">
+                    Usuário Comum - Pode visualizar e gerar relatórios
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="admin" id="admin" />
+                  <Label htmlFor="admin" className="font-normal">
+                    Administrador - Acesso completo ao sistema
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
 

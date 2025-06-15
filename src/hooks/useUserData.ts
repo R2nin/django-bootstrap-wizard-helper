@@ -36,11 +36,10 @@ export const useUserData = () => {
     }
   }, []);
 
-  const addUser = (user: Omit<User, 'id' | 'createdAt'>) => {
+  const addUser = (user: Omit<User, 'id' | 'createdAt'> & { role: 'admin' | 'user' }) => {
     const newUser: UserWithRole = {
       ...user,
       id: Date.now().toString(),
-      role: 'user',
       createdAt: new Date().toISOString()
     };
     LocalStorage.add('users', newUser);
