@@ -1,6 +1,5 @@
-
 export type LogAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT';
-export type LogEntity = 'PATRIMONY' | 'USER' | 'SYSTEM' | 'SUPPLIER';
+export type LogEntity = 'PATRIMONY' | 'USER' | 'SYSTEM' | 'SUPPLIER' | 'LOCATION';
 
 export interface LogEntry {
   id: string;

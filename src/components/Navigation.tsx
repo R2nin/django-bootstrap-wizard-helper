@@ -1,8 +1,7 @@
-
 import { Button } from "@/components/ui/button";
 import { Plus, Truck, Users, Activity } from "lucide-react";
 
-type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier';
+type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation';
 
 interface NavigationProps {
   activeTab: ActiveTab;
