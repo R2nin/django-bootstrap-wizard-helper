@@ -46,11 +46,6 @@ export const PatrimonyList = ({ items, onUpdate, onDelete }: PatrimonyListProps)
     setShowDetails(true);
   };
 
-  const handleUpdateItem = (id: string, updatedItem: Partial<PatrimonyItem>) => {
-    onUpdate(id, updatedItem);
-    setShowDetails(false);
-  };
-
   return (
     <div className="space-y-6">
       <Card>
@@ -140,7 +135,11 @@ export const PatrimonyList = ({ items, onUpdate, onDelete }: PatrimonyListProps)
       {showDetails && selectedItem && (
         <PatrimonyDetails
           item={selectedItem}
-          onUpdate={handleUpdateItem}
+          onClose={() => setShowDetails(false)}
+          onUpdate={(updatedItem) => {
+            onUpdate(selectedItem.id, updatedItem);
+            setShowDetails(false);
+          }}
         />
       )}
     </div>

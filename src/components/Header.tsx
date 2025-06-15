@@ -1,19 +1,14 @@
 
 import { Button } from "@/components/ui/button";
-import { Package, Shield, LogOut, MapPin, Users } from "lucide-react";
+import { Package, Shield, LogOut } from "lucide-react";
 import { UserWithRole } from "@/types/log";
-import { LocationManager } from "./LocationManager";
-import { ResponsibleManager } from "./ResponsibleManager";
 
 interface HeaderProps {
   currentUser: UserWithRole;
   onLogout: () => void;
-  users: UserWithRole[];
-  onLocationAdded: (location: string) => void;
-  onResponsibleAdded: (responsible: string) => void;
 }
 
-export const Header = ({ currentUser, onLogout, users, onLocationAdded, onResponsibleAdded }: HeaderProps) => {
+export const Header = ({ currentUser, onLogout }: HeaderProps) => {
   return (
     <header className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -24,14 +19,7 @@ export const Header = ({ currentUser, onLogout, users, onLocationAdded, onRespon
               Sistema de Gestão Patrimonial
             </h1>
           </div>
-          
           <div className="flex items-center space-x-4">
-            {/* Botões de gerenciamento */}
-            <div className="flex items-center space-x-2">
-              <LocationManager onLocationAdded={onLocationAdded} />
-              <ResponsibleManager users={users} onResponsibleAdded={onResponsibleAdded} />
-            </div>
-            
             <div className="flex items-center space-x-2">
               <Shield className="h-4 w-4 text-gray-600" />
               <span className="text-sm text-gray-600">

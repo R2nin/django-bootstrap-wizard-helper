@@ -1,138 +1,150 @@
 
 import { useState } from "react";
-import { PatrimonyItem } from "@/pages/Index";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Edit2, Save, X } from "lucide-react";
-import { PatrimonyForm } from "./PatrimonyForm";
-import { Supplier } from "@/types/supplier";
-import { UserWithRole } from "@/types/user";
+import { Label } from "@/components/ui/label";
+import { X, Edit, Calendar, MapPin, User, Package, DollarSign, Hash } from "lucide-react";
+import { PatrimonyItem } from "@/pages/Index";
+import { PatrimonyForm } from "@/components/PatrimonyForm";
 
 interface PatrimonyDetailsProps {
   item: PatrimonyItem;
-  onUpdate?: (id: string, updatedItem: Partial<PatrimonyItem>) => void;
-  suppliers?: Supplier[];
-  users?: UserWithRole[];
-  availableLocations?: string[];
-  availableResponsibles?: string[];
+  onClose: () => void;
+  onUpdate: (item: Partial<PatrimonyItem>) => void;
 }
 
-export const PatrimonyDetails = ({ 
-  item, 
-  onUpdate, 
-  suppliers = [], 
-  users = [], 
-  availableLocations = [], 
-  availableResponsibles = [] 
-}: PatrimonyDetailsProps) => {
+export const PatrimonyDetails = ({ item, onClose, onUpdate }: PatrimonyDetailsProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      case 'retired': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active':
+        return <Badge variant="default">Ativo</Badge>;
+      case 'maintenance':
+        return <Badge variant="secondary">Em Manutenção</Badge>;
+      case 'retired':
+        return <Badge variant="destructive">Inativo</Badge>;
+      default:
+        return <Badge variant="outline">Desconhecido</Badge>;
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'active': return 'Ativo';
-      case 'maintenance': return 'Manutenção';
-      case 'retired': return 'Retirado';
-      default: return status;
-    }
-  };
-
-  const handleEditSubmit = (updatedData: Omit<PatrimonyItem, 'id'>) => {
-    if (onUpdate) {
-      onUpdate(item.id, updatedData);
-      setIsEditing(false);
-    }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   if (isEditing) {
     return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Editar Item</h2>
-          <Button variant="outline" onClick={() => setIsEditing(false)}>
-            <X className="h-4 w-4 mr-2" />
-            Cancelar
-          </Button>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-4 border-b flex justify-between items-center">
+            <h2 className="text-lg font-semibold">Editar Item</h2>
+            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="p-4">
+            <PatrimonyForm
+              initialData={item}
+              onSubmit={(updatedItem) => {
+                onUpdate(updatedItem);
+                setIsEditing(false);
+              }}
+            />
+          </div>
         </div>
-        <PatrimonyForm
-          onSubmit={handleEditSubmit}
-          existingItems={[]}
-          suppliers={suppliers}
-          users={users}
-          availableLocations={availableLocations}
-          availableResponsibles={availableResponsibles}
-          editingItem={item}
-        />
       </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-xl">{item.name}</CardTitle>
-        {onUpdate && (
-          <Button variant="outline" onClick={() => setIsEditing(true)}>
-            <Edit2 className="h-4 w-4 mr-2" />
-            Editar
-          </Button>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium text-gray-500">Número da Chapa</label>
-            <p className="text-lg font-semibold">{item.numeroChapa}</p>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-xl">{item.name}</CardTitle>
+          <div className="flex space-x-2">
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          <div>
-            <label className="text-sm font-medium text-gray-500">Categoria</label>
-            <p>{item.category}</p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <Hash className="h-5 w-5 text-gray-400" />
+                <div>
+                  <Label className="text-sm text-gray-600">Número da Chapa</Label>
+                  <p className="font-medium text-lg">{item.numeroChapa}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <Package className="h-5 w-5 text-gray-400" />
+                <div>
+                  <Label className="text-sm text-gray-600">Categoria</Label>
+                  <p className="font-medium">{item.category}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <MapPin className="h-5 w-5 text-gray-400" />
+                <div>
+                  <Label className="text-sm text-gray-600">Localização</Label>
+                  <p className="font-medium">{item.location}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <User className="h-5 w-5 text-gray-400" />
+                <div>
+                  <Label className="text-sm text-gray-600">Responsável</Label>
+                  <p className="font-medium">{item.responsible}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <DollarSign className="h-5 w-5 text-gray-400" />
+                <div>
+                  <Label className="text-sm text-gray-600">Valor</Label>
+                  <p className="font-medium">R$ {item.value.toLocaleString('pt-BR')}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <Calendar className="h-5 w-5 text-gray-400" />
+                <div>
+                  <Label className="text-sm text-gray-600">Data de Aquisição</Label>
+                  <p className="font-medium">{formatDate(item.acquisitionDate)}</p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm text-gray-600">Status</Label>
+                <div className="mt-1">
+                  {getStatusBadge(item.status)}
+                </div>
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="text-sm font-medium text-gray-500">Localização</label>
-            <p>{item.location}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-500">Status</label>
-            <Badge className={getStatusColor(item.status)}>
-              {getStatusLabel(item.status)}
-            </Badge>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-500">Data de Aquisição</label>
-            <p>{new Date(item.acquisitionDate).toLocaleDateString('pt-BR')}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-500">Valor</label>
-            <p>R$ {item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-500">Responsável</label>
-            <p>{item.responsible}</p>
-          </div>
-          {item.supplierId && (
+
+          {item.description && (
             <div>
-              <label className="text-sm font-medium text-gray-500">Fornecedor</label>
-              <p>{suppliers.find(s => s.id === item.supplierId)?.name || 'N/A'}</p>
+              <Label className="text-sm text-gray-600">Descrição</Label>
+              <p className="mt-2 text-gray-900 bg-gray-50 p-3 rounded-lg">
+                {item.description}
+              </p>
             </div>
           )}
-        </div>
-        {item.description && (
-          <div>
-            <label className="text-sm font-medium text-gray-500">Descrição</label>
-            <p className="mt-1">{item.description}</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };

@@ -1,255 +1,194 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { ptBR } from 'date-fns/locale';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Supplier } from "@/types/supplier";
-import { UserWithRole } from "@/types/user";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PatrimonyItem } from "@/pages/Index";
+import { Supplier } from "@/types/supplier";
+import { LocationManager } from "@/components/LocationManager";
+import { ResponsibleManager } from "@/components/ResponsibleManager";
+import { UserWithRole } from "@/types/log";
 
 interface PatrimonyFormProps {
-  onSubmit: (item: Omit<PatrimonyItem, 'id'>) => void;
-  existingItems: PatrimonyItem[];
-  suppliers: Supplier[];
-  users: UserWithRole[];
-  availableLocations: string[];
-  availableResponsibles: string[];
-  editingItem?: PatrimonyItem;
+  onSubmit: (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => void;
+  initialData?: PatrimonyItem;
+  existingItems?: PatrimonyItem[];
+  suppliers?: Supplier[];
+  users?: UserWithRole[];
 }
 
-export const PatrimonyForm = ({ 
-  onSubmit, 
-  existingItems, 
-  suppliers, 
-  users, 
-  availableLocations, 
-  availableResponsibles,
-  editingItem 
-}: PatrimonyFormProps) => {
+export const PatrimonyForm = ({ onSubmit, initialData, existingItems = [], suppliers = [], users = [] }: PatrimonyFormProps) => {
   const [formData, setFormData] = useState({
-    numeroChapa: editingItem?.numeroChapa || 0,
-    name: editingItem?.name || '',
-    category: editingItem?.category || '',
-    location: editingItem?.location || '',
-    acquisitionDate: editingItem?.acquisitionDate || format(new Date(), "yyyy-MM-dd"),
-    value: editingItem?.value || 0,
-    status: editingItem?.status || ('active' as 'active' | 'maintenance' | 'retired'),
-    description: editingItem?.description || '',
-    responsible: editingItem?.responsible || '',
-    supplierId: editingItem?.supplierId || undefined
+    name: initialData?.name || '',
+    category: initialData?.category || '',
+    location: initialData?.location || '',
+    acquisitionDate: initialData?.acquisitionDate || '',
+    value: initialData?.value || 0,
+    status: initialData?.status || 'active' as const,
+    description: initialData?.description || '',
+    responsible: initialData?.responsible || '',
+    supplierId: initialData?.supplierId || 'none'
   });
-  const [date, setDate] = useState<Date>(editingItem ? new Date(editingItem.acquisitionDate) : new Date());
+
+  // Extrair dados únicos dos itens existentes
+  const uniqueResponsibles = [...new Set(existingItems.map(item => item.responsible).filter(Boolean))];
+  const uniqueLocations = [...new Set(existingItems.map(item => item.location).filter(Boolean))];
+
+  const getNextChapa = () => {
+    if (existingItems.length === 0) return 1001;
+    const maxChapa = Math.max(...existingItems.map(item => item.numeroChapa || 0));
+    return maxChapa + 1;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (
-      !formData.numeroChapa ||
-      !formData.name ||
-      !formData.category ||
-      !formData.location ||
-      !formData.acquisitionDate ||
-      !formData.value ||
-      !formData.status ||
-      !formData.responsible
-    ) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
-      return;
-    }
-
-    onSubmit({
-      numeroChapa: formData.numeroChapa,
-      name: formData.name,
-      category: formData.category,
-      location: formData.location,
-      acquisitionDate: formData.acquisitionDate,
-      value: formData.value,
-      status: formData.status,
-      description: formData.description,
-      responsible: formData.responsible,
-      supplierId: formData.supplierId
-    });
-
-    if (!editingItem) {
+    const submitData = {
+      ...formData,
+      supplierId: formData.supplierId === 'none' ? undefined : formData.supplierId
+    };
+    onSubmit(submitData);
+    
+    // Reset form if not editing
+    if (!initialData) {
       setFormData({
-        numeroChapa: 0,
         name: '',
         category: '',
         location: '',
-        acquisitionDate: format(new Date(), "yyyy-MM-dd"),
+        acquisitionDate: '',
         value: 0,
         status: 'active',
         description: '',
         responsible: '',
-        supplierId: undefined
+        supplierId: 'none'
       });
     }
   };
 
+  const handleLocationAdded = (location: string) => {
+    setFormData({ ...formData, location });
+  };
+
+  const handleResponsibleAdded = (responsible: string) => {
+    setFormData({ ...formData, responsible });
+  };
+
+  const categories = [
+    'Informática',
+    'Mobiliário',
+    'Equipamentos',
+    'Veículos',
+    'Imóveis',
+    'Outros'
+  ];
+
   return (
-    <Card className="max-w-4xl mx-auto">
+    <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>{editingItem ? 'Editar Item do Patrimônio' : 'Adicionar Novo Item ao Patrimônio'}</CardTitle>
+        <CardTitle>
+          {initialData ? 'Editar Item' : 'Adicionar Novo Item ao Patrimônio'}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="numeroChapa">Número da Chapa *</Label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="numeroChapa">Número da Chapa</Label>
               <Input
                 id="numeroChapa"
-                type="number"
-                value={formData.numeroChapa === 0 ? '' : formData.numeroChapa}
-                onChange={(e) => setFormData({ ...formData, numeroChapa: Number(e.target.value) })}
-                placeholder="Digite o número da chapa"
-                required
+                value={initialData?.numeroChapa || getNextChapa()}
+                readOnly
+                className="bg-gray-100"
+                placeholder="Será gerado automaticamente"
               />
             </div>
 
-            <div>
-              <Label htmlFor="name">Nome do Item *</Label>
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome do Item</Label>
               <Input
                 id="name"
-                type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Computador Dell"
+                placeholder="Ex: Notebook Dell Inspiron"
                 required
               />
             </div>
 
-            <div>
-              <Label htmlFor="category">Categoria *</Label>
-              <Input
-                id="category"
-                type="text"
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="Ex: Eletrônicos"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="location">Localização *</Label>
-              <Select value={formData.location} onValueChange={(value) => setFormData({ ...formData, location: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a localização" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableLocations.map((location) => (
-                    <SelectItem key={location} value={location}>
-                      {location}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="acquisitionDate">Data de Aquisição *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-[240px] justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="center" side="bottom">
-                  <Calendar
-                    mode="single"
-                    locale={ptBR}
-                    selected={date}
-                    onSelect={(date) => {
-                      setDate(date);
-                      setFormData({ ...formData, acquisitionDate: format(date, "yyyy-MM-dd") })
-                    }}
-                    disabled={(date) =>
-                      date > new Date()
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div>
-              <Label htmlFor="value">Valor (R$) *</Label>
-              <Input
-                id="value"
-                type="number"
-                value={formData.value === 0 ? '' : formData.value}
-                onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
-                placeholder="Digite o valor em reais"
-                required
-              />
-            </div>
-
-            <div>
-              <Label>Status *</Label>
-              <RadioGroup 
-                value={formData.status} 
-                onValueChange={(value: 'active' | 'maintenance' | 'retired') => setFormData({ ...formData, status: value })}
-                className="flex space-x-2"
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoria</Label>
+              <Select 
+                value={formData.category} 
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
               >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="active" id="active" />
-                  <Label htmlFor="active">Ativo</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="maintenance" id="maintenance" />
-                  <Label htmlFor="maintenance">Em Manutenção</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="retired" id="retired" />
-                  <Label htmlFor="retired">Retirado</Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            <div>
-              <Label htmlFor="responsible">Responsável *</Label>
-              <Select value={formData.responsible} onValueChange={(value) => setFormData({ ...formData, responsible: value })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o responsável" />
+                  <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.fullName}>
-                      {user.fullName} ({user.email})
-                    </SelectItem>
-                  ))}
-                  {availableResponsibles.map((responsible) => (
-                    <SelectItem key={responsible} value={responsible}>
-                      {responsible}
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="location">Localização</Label>
+                <LocationManager onLocationAdded={handleLocationAdded} />
+              </div>
+              <div className="relative">
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Ex: Escritório - Sala 101"
+                  required
+                  list="locations-datalist"
+                />
+                <datalist id="locations-datalist">
+                  {uniqueLocations.map((location, index) => (
+                    <option key={index} value={location} />
+                  ))}
+                </datalist>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="responsible">Responsável</Label>
+                <ResponsibleManager users={users} onResponsibleAdded={handleResponsibleAdded} />
+              </div>
+              <div className="relative">
+                <Input
+                  id="responsible"
+                  value={formData.responsible}
+                  onChange={(e) => setFormData({ ...formData, responsible: e.target.value })}
+                  placeholder="Ex: João Silva"
+                  required
+                  list="responsibles-datalist"
+                />
+                <datalist id="responsibles-datalist">
+                  {uniqueResponsibles.map((responsible, index) => (
+                    <option key={index} value={responsible} />
+                  ))}
+                </datalist>
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="supplier">Fornecedor</Label>
-              <Select value={formData.supplierId || ''} onValueChange={(value) => setFormData({ ...formData, supplierId: value })}>
+              <Select 
+                value={formData.supplierId} 
+                onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o fornecedor" />
+                  <SelectValue placeholder="Selecione um fornecedor" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Sem fornecedor</SelectItem>
                   {suppliers.map((supplier) => (
                     <SelectItem key={supplier.id} value={supplier.id}>
                       {supplier.name}
@@ -258,21 +197,66 @@ export const PatrimonyForm = ({
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="acquisitionDate">Data de Aquisição</Label>
+              <Input
+                id="acquisitionDate"
+                type="date"
+                value={formData.acquisitionDate}
+                onChange={(e) => setFormData({ ...formData, acquisitionDate: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="value">Valor (R$)</Label>
+              <Input
+                id="value"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.value}
+                onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
+                placeholder="0,00"
+                required
+              />
+            </div>
           </div>
 
-          <div>
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select 
+              value={formData.status} 
+              onValueChange={(value: 'active' | 'maintenance' | 'retired') => 
+                setFormData({ ...formData, status: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Ativo</SelectItem>
+                <SelectItem value="maintenance">Em Manutenção</SelectItem>
+                <SelectItem value="retired">Inativo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="description">Descrição</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Digite a descrição do item"
+              placeholder="Descrição detalhada do item..."
+              rows={3}
             />
           </div>
 
-          <div className="flex justify-end">
-            <Button type="submit">{editingItem ? 'Atualizar Item' : 'Adicionar Item'}</Button>
-          </div>
+          <Button type="submit" className="w-full">
+            {initialData ? 'Atualizar Item' : 'Adicionar ao Patrimônio'}
+          </Button>
         </form>
       </CardContent>
     </Card>

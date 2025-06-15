@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MapPin } from "lucide-react";
+import { Plus } from "lucide-react";
 
 interface LocationManagerProps {
   onLocationAdded: (location: string) => void;
@@ -27,7 +27,7 @@ export const LocationManager = ({ onLocationAdded }: LocationManagerProps) => {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button type="button" variant="outline" size="sm">
-          <MapPin className="h-4 w-4 mr-1" />
+          <Plus className="h-4 w-4 mr-1" />
           Nova Localização
         </Button>
       </DialogTrigger>
