@@ -66,7 +66,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   const [editingItem, setEditingItem] = useState<PatrimonyItem | null>(null);
   
   // Hooks para gerenciamento de dados - cada um gerencia seu próprio localStorage
-  const { items, addItem, addItemWithChapa, updateItem, deleteItem } = usePatrimonyData();
+  const { items, addItem, addItemWithChapa, updateItem, deleteItem, addMultipleItems } = usePatrimonyData();
   const { logs, addLog } = useLogData();
   const { users, addUser, deleteUser } = useUserData();
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useSupplierData();
@@ -387,60 +387,57 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   };
 
   /**
-   * IMPORTAÇÃO EM MASSA DE ITENS
+   * IMPORTAÇÃO EM MASSA DE ITENS - VERSÃO CORRIGIDA
    * 
    * Processa uma lista de itens vindos de importação (Excel/CSV) e os adiciona ao sistema.
-   * Cada item é adicionado individualmente e registrado no log.
+   * Usa a função addMultipleItems para adicionar todos os itens de uma vez, evitando conflitos.
    * 
    * @param importedItems - Array de itens já processados do arquivo
    */
   const handleImportItems = (importedItems: PatrimonyItem[]) => {
-    console.log('Iniciando importação de', importedItems.length, 'itens');
+    console.log('MainApp - Iniciando importação de', importedItems.length, 'itens');
+    console.log('MainApp - Estado atual antes da importação:', items.length, 'itens');
     
-    let successCount = 0;
-    let errorCount = 0;
-    
-    // Processa cada item individualmente
-    importedItems.forEach((item, index) => {
-      try {
-        console.log(`Importando item ${index + 1}:`, item);
-        const newItem = addItemWithChapa(item); // Usa chapa específica do arquivo
-        
+    try {
+      // Usa a nova função que adiciona múltiplos itens de uma vez
+      const addedItems = addMultipleItems(importedItems);
+      console.log('MainApp - Itens adicionados com sucesso:', addedItems.length);
+      
+      // Registra a importação no log
+      addedItems.forEach((item) => {
         addLog(
           'CREATE',
           'PATRIMONY',
-          'Item importado do Excel',
+          'Item importado do Excel/CSV',
           currentUser.id,
           currentUser.fullName,
-          newItem.id,
-          `${newItem.name} (Chapa: ${newItem.numeroChapa})`
+          item.id,
+          `${item.name} (Chapa: ${item.numeroChapa})`
         );
-        successCount++;
-      } catch (error) {
-        console.error(`Erro ao importar item ${index + 1}:`, error);
-        errorCount++;
-      }
-    });
-    
-    console.log(`Importação concluída: ${successCount} sucessos, ${errorCount} erros`);
-    
-    // Feedback para o usuário sobre o resultado da importação
-    if (successCount > 0) {
+      });
+      
+      console.log('MainApp - Todos os logs registrados para', addedItems.length, 'itens');
+      
+      // Feedback para o usuário sobre o resultado da importação
       toast({
         title: "Sucesso!",
-        description: `${successCount} itens importados com sucesso.`,
+        description: `${addedItems.length} itens importados com sucesso.`,
       });
-    }
-    
-    if (errorCount > 0) {
+      
+      console.log('MainApp - Toast de sucesso exibido');
+      
+    } catch (error) {
+      console.error('MainApp - Erro durante a importação:', error);
       toast({
-        title: "Atenção",
-        description: `${errorCount} itens falharam na importação.`,
+        title: "Erro na importação",
+        description: "Ocorreu um erro ao importar os itens. Tente novamente.",
         variant: "destructive"
       });
     }
     
-    setActiveTab('items'); // Vai para listagem para ver os resultados
+    // Vai para listagem para ver os resultados
+    setActiveTab('items');
+    console.log('MainApp - Redirecionando para aba items');
   };
 
   /**
