@@ -49,9 +49,10 @@ import { toast } from "@/components/ui/use-toast"
 import { Supplier } from '@/types/supplier';
 import { PatrimonyImport } from './PatrimonyImport';
 import { SystemManual } from './SystemManual';
+import { TechnicalDocumentation } from './TechnicalDocumentation';
 
 // Definição dos tipos de abas disponíveis no sistema
-type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation' | 'import' | 'manual';
+type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation' | 'import' | 'manual' | 'technical';
 
 interface MainAppProps {
   currentUser: UserWithRole;
@@ -562,6 +563,11 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
             {/* ABA MANUAL: Manual do usuário */}
             {activeTab === 'manual' && (
               <SystemManual />
+            )}
+
+            {/* ABA DOCUMENTAÇÃO TÉCNICA: Documentação do código */}
+            {activeTab === 'technical' && (
+              <TechnicalDocumentation />
             )}
           </>
         )}
