@@ -59,27 +59,51 @@ export const processCSVFile = async (file: File): Promise<ExcelRow[]> => {
   const parsedData: ExcelRow[] = [];
   
   // Skip header if it exists (check if first row contains non-numeric first column)
-  const startIndex = isNaN(Number(lines[0].split(/[,;\t]/)[0])) ? 1 : 0;
+  const firstLine = lines[0].split(/[,;\t]/).map(col => col.trim().replace(/"/g, ''));
+  const startIndex = isNaN(Number(firstLine[0])) ? 1 : 0;
+  
+  console.log('CSV - Primeira linha:', firstLine);
+  console.log('CSV - Iniciando do índice:', startIndex);
   
   for (let i = startIndex; i < lines.length; i++) {
-    const columns = lines[i].split(/[,;\t]/).map(col => col.trim().replace(/"/g, ''));
+    const line = lines[i].trim();
+    if (!line) continue;
+    
+    // Detectar separador (vírgula, ponto e vírgula ou tab)
+    let separator = ',';
+    if (line.includes(';')) separator = ';';
+    else if (line.includes('\t')) separator = '\t';
+    
+    const columns = line.split(separator).map(col => col.trim().replace(/^["']|["']$/g, ''));
+    
+    console.log(`CSV - Linha ${i + 1}:`, columns);
     
     if (columns.length >= 3) {
       const numeroChapa = parseInt(columns[0]);
       const acquisitionDate = columns[1];
       const name = columns[2];
 
+      console.log(`CSV - Processando: Chapa=${numeroChapa}, Data=${acquisitionDate}, Nome=${name}`);
+
       if (!isNaN(numeroChapa) && acquisitionDate && name) {
         const formattedDate = formatDate(acquisitionDate);
-        parsedData.push({
+        const processedRow = {
           numeroChapa,
           acquisitionDate: formattedDate,
-          name
-        });
+          name: name.trim()
+        };
+        
+        console.log('CSV - Item processado:', processedRow);
+        parsedData.push(processedRow);
+      } else {
+        console.log(`CSV - Linha ${i + 1} ignorada: dados inválidos`);
       }
+    } else {
+      console.log(`CSV - Linha ${i + 1} ignorada: menos de 3 colunas`);
     }
   }
 
+  console.log('CSV - Total de itens processados:', parsedData.length);
   return parsedData;
 };
 
@@ -91,8 +115,17 @@ export const processExcelFile = async (file: File): Promise<ExcelRow[]> => {
   const firstSheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[firstSheetName];
   
-  // Converter para JSON
-  const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+  console.log('Excel - Nome da planilha:', firstSheetName);
+  console.log('Excel - Worksheet:', worksheet);
+  
+  // Converter para JSON com cabeçalhos como array
+  const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+    header: 1,
+    defval: '',
+    raw: false // Garantir que os valores sejam strings
+  });
+  
+  console.log('Excel - Dados brutos:', jsonData);
   
   if (jsonData.length === 0) {
     throw new Error('Planilha vazia');
@@ -100,28 +133,46 @@ export const processExcelFile = async (file: File): Promise<ExcelRow[]> => {
 
   const parsedData: ExcelRow[] = [];
 
-  // Determinar se há cabeçalho
+  // Determinar se há cabeçalho analisando a primeira linha
   const firstRow = jsonData[0] as any[];
-  const startIndex = (firstRow.length >= 3 && isNaN(Number(firstRow[0]))) ? 1 : 0;
+  const hasHeader = firstRow.length >= 3 && isNaN(Number(firstRow[0]));
+  const startIndex = hasHeader ? 1 : 0;
+  
+  console.log('Excel - Primeira linha:', firstRow);
+  console.log('Excel - Tem cabeçalho:', hasHeader);
+  console.log('Excel - Iniciando do índice:', startIndex);
   
   for (let i = startIndex; i < jsonData.length; i++) {
     const row = jsonData[i] as any[];
     
-    if (row && row.length >= 3 && row[0] !== undefined && row[1] !== undefined && row[2] !== undefined) {
-      const numeroChapa = parseInt(String(row[0]));
-      const acquisitionDate = String(row[1]);
-      const name = String(row[2]);
+    console.log(`Excel - Linha ${i + 1}:`, row);
+    
+    // Verificar se a linha tem pelo menos 3 colunas e não está vazia
+    if (row && row.length >= 3 && row[0] !== undefined && row[0] !== '' && row[1] !== undefined && row[2] !== undefined) {
+      const numeroChapa = parseInt(String(row[0]).trim());
+      const acquisitionDate = String(row[1]).trim();
+      const name = String(row[2]).trim();
+
+      console.log(`Excel - Processando: Chapa=${numeroChapa}, Data=${acquisitionDate}, Nome=${name}`);
 
       if (!isNaN(numeroChapa) && acquisitionDate && name) {
         const formattedDate = formatDate(acquisitionDate);
-        parsedData.push({
+        const processedRow = {
           numeroChapa,
           acquisitionDate: formattedDate,
-          name: name.trim()
-        });
+          name: name
+        };
+        
+        console.log('Excel - Item processado:', processedRow);
+        parsedData.push(processedRow);
+      } else {
+        console.log(`Excel - Linha ${i + 1} ignorada: dados inválidos`);
       }
+    } else {
+      console.log(`Excel - Linha ${i + 1} ignorada: linha vazia ou incompleta`);
     }
   }
 
+  console.log('Excel - Total de itens processados:', parsedData.length);
   return parsedData;
 };
