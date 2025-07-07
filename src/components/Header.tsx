@@ -1,10 +1,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Package, Shield, LogOut, MapPin } from "lucide-react";
-import { UserWithRole } from "@/types/log";
+import { User } from "@/types/user";
 
 interface HeaderProps {
-  currentUser: UserWithRole;
+  currentUser: User;
   onLogout: () => void;
   onAddLocation: () => void;
 }
