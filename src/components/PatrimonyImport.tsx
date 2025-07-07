@@ -48,6 +48,11 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
       console.log('Dados processados:', parsedData);
       setPreviewData(parsedData);
       
+      toast({
+        title: "Arquivo processado!",
+        description: `${parsedData.length} itens encontrados para importação.`,
+      });
+      
     } catch (error) {
       console.error('Error processing file:', error);
       toast({
@@ -60,30 +65,48 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
     }
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (previewData.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Nenhum item para importar. Processe um arquivo primeiro.",
+        variant: "destructive"
+      });
       return;
     }
 
-    const itemsToImport: PatrimonyItem[] = previewData.map(row => ({
-      id: '',
-      numeroChapa: row.numeroChapa,
-      name: row.name,
-      category: 'Outros',
-      location: location.trim(),
-      acquisitionDate: row.acquisitionDate,
-      value: 0,
-      status: 'active' as const,
-      description: `Importado do arquivo: ${file?.name}`,
-      responsible: 'A definir'
-    }));
+    try {
+      const itemsToImport: PatrimonyItem[] = previewData.map(row => ({
+        id: '', // Será gerado pelo Supabase
+        numeroChapa: row.numeroChapa,
+        name: row.name,
+        category: 'Outros',
+        location: location.trim(),
+        acquisitionDate: row.acquisitionDate,
+        value: 0,
+        status: 'active' as const,
+        description: `Importado do arquivo: ${file?.name}`,
+        responsible: 'A definir'
+      }));
 
-    onImport(itemsToImport);
-    
-    // Reset form
-    setFile(null);
-    setLocation('');
-    setPreviewData([]);
+      console.log('PatrimonyImport - Itens para importar:', itemsToImport);
+      
+      // Chamar a função onImport passada como prop
+      await onImport(itemsToImport);
+      
+      // Reset form após importação bem-sucedida
+      setFile(null);
+      setLocation('');
+      setPreviewData([]);
+      
+    } catch (error) {
+      console.error('Erro na importação:', error);
+      toast({
+        title: "Erro na importação",
+        description: "Ocorreu um erro ao importar os itens. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
