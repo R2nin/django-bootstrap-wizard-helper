@@ -1,30 +1,11 @@
 /**
- * SISTEMA DE GESTÃO PATRIMONIAL
+ * SISTEMA DE GESTÃO PATRIMONIAL COM SUPABASE
  * 
  * Componente principal da aplicação que gerencia todo o fluxo de patrimônio.
- * 
- * FUNCIONALIDADES PRINCIPAIS:
- * - Dashboard com estatísticas e relatórios
- * - Gestão de itens patrimoniais (CRUD completo)
- * - Sistema de numeração de chapas automático e manual
- * - Importação de itens via Excel/CSV
- * - Gestão de fornecedores e usuários
- * - Sistema de logs para auditoria
- * - Controle de permissões por role (admin/user)
- * 
- * FLUXO DE CRIAÇÃO DE ITENS:
- * 1. handleAddItem: Cria item com numeração automática (próximo número disponível)
- * 2. handleAddItemWithChapa: Cria item com numeração manual específica
- * 3. handleImportItems: Importa múltiplos itens via arquivo
- * 
- * CONTROLE DE PERMISSÕES:
- * - view: Todos podem visualizar
- * - edit: Admin e User podem editar
- * - delete: Apenas Admin pode deletar
- * - admin: Apenas Admin tem acesso a funções administrativas
+ * Agora integrado com Supabase para persistência de dados.
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Navigation } from './Navigation';
 import { Header } from './Header';
 import { PatrimonyList } from './PatrimonyList';
@@ -33,7 +14,8 @@ import { LogList } from './LogList';
 import { UserList } from './UserList';
 import { UserForm } from './UserForm';
 import { Dashboard } from './Dashboard';
-import { usePatrimonyData } from '@/hooks/usePatrimonyData';
+import { PatrimonyComparison } from './PatrimonyComparison';
+import { useSupabasePatrimony } from '@/hooks/useSupabasePatrimony';
 import { useLogData } from '@/hooks/useLogData';
 import { useUserData } from '@/hooks/useUserData';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,7 +34,7 @@ import { SystemManual } from './SystemManual';
 import { TechnicalDocumentation } from './TechnicalDocumentation';
 
 // Definição dos tipos de abas disponíveis no sistema
-type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation' | 'import' | 'manual' | 'technical';
+type ActiveTab = 'dashboard' | 'items' | 'add' | 'users' | 'addUser' | 'logs' | 'suppliers' | 'addSupplier' | 'addLocation' | 'import' | 'manual' | 'technical' | 'compare';
 
 interface MainAppProps {
   currentUser: UserWithRole;
@@ -66,8 +48,8 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   // Estado para controlar qual item está sendo editado (null = criando novo)
   const [editingItem, setEditingItem] = useState<PatrimonyItem | null>(null);
   
-  // Hooks para gerenciamento de dados - cada um gerencia seu próprio localStorage
-  const { items, addItem, addItemWithChapa, updateItem, deleteItem, addMultipleItems } = usePatrimonyData();
+  // Hooks para gerenciamento de dados - agora usando Supabase
+  const { items, loading, addItem, addItemWithChapa, updateItem, deleteItem, addMultipleItems } = useSupabasePatrimony();
   const { logs, addLog } = useLogData();
   const { users, addUser, deleteUser } = useUserData();
   const { suppliers, addSupplier, updateSupplier, deleteSupplier } = useSupplierData();
@@ -76,27 +58,8 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   // Estado para controlar modal de adicionar localização
   const [isAddingLocation, setIsAddingLocation] = useState(false);
 
-  // Debug: Log do estado atual sempre que mudanças importantes acontecem
-  useEffect(() => {
-    console.log('MainApp - Componente renderizado, activeTab:', activeTab);
-    console.log('MainApp - Total items no estado:', items.length);
-    items.forEach((item, index) => {
-      console.log(`MainApp - Item ${index + 1}:`, item);
-    });
-  }, [activeTab, items]);
-
   /**
    * SISTEMA DE CONTROLE DE PERMISSÕES
-   * 
-   * Verifica se o usuário atual tem permissão para realizar uma ação específica.
-   * 
-   * @param action - Tipo de ação que se deseja verificar
-   * @returns boolean - true se tem permissão, false caso contrário
-   * 
-   * HIERARQUIA DE PERMISSÕES:
-   * - Admin: Pode fazer tudo
-   * - User: Pode visualizar e editar, mas não deletar ou acessar funções admin
-   * - Viewer: Apenas visualização (futuro)
    */
   const hasPermission = (action: 'view' | 'edit' | 'delete' | 'admin'): boolean => {
     console.log('MainApp - Verificando permissão:', action, 'para usuário:', currentUser.role);
@@ -110,9 +73,9 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
       case 'edit':
         return currentUser.role === 'user'; // User também pode editar
       case 'delete':
-        return false; // Apenas admin pode deletar (já verificado acima)
+        return false; // Apenas admin pode deletar
       case 'admin':
-        return false; // Apenas admin tem acesso a funções administrativas (já verificado acima)
+        return false; // Apenas admin tem acesso a funções administrativas
       default:
         return false;
     }
@@ -120,100 +83,60 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
 
   /**
    * CRIAÇÃO DE ITEM COM NUMERAÇÃO AUTOMÁTICA
-   * 
-   * Cria um novo item patrimonial usando o próximo número de chapa disponível.
-   * O número é calculado automaticamente pelo hook usePatrimonyData.
-   * 
-   * @param item - Dados do item sem ID e sem numeroChapa
    */
-  const handleAddItem = (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => {
+  const handleAddItem = async (item: Omit<PatrimonyItem, 'id' | 'numeroChapa'>) => {
     console.log('MainApp - handleAddItem INICIADO com:', item);
-    console.log('MainApp - Total items ANTES da adição:', items.length);
     
-    // Cria o item com numeração automática
-    const newItem = addItem(item);
-    console.log('MainApp - Item CRIADO:', newItem);
+    const newItem = await addItem(item);
     
-    // Aguarda um pouco para garantir que o estado foi atualizado
-    setTimeout(() => {
-      console.log('MainApp - Total items APÓS adição (timeout):', items.length);
-    }, 100);
-    
-    // Registra a ação no log para auditoria
-    addLog(
-      'CREATE',
-      'PATRIMONY',
-      'Novo item adicionado ao patrimônio',
-      currentUser.id,
-      currentUser.fullName,
-      newItem.id,
-      `${newItem.name} (Chapa: ${newItem.numeroChapa})`
-    );
-    
-    // Exibe notificação de sucesso para o usuário
-    toast({
-      title: "Sucesso!",
-      description: `Item "${newItem.name}" adicionado com chapa ${newItem.numeroChapa}.`,
-    });
-    
-    console.log('MainApp - Toast exibido para item:', newItem.name);
-    
-    // Redireciona para a aba de itens para mostrar o resultado
-    setActiveTab('items');
-    console.log('MainApp - Mudando para aba items');
+    if (newItem) {
+      // Registra a ação no log para auditoria
+      addLog(
+        'CREATE',
+        'PATRIMONY',
+        'Novo item adicionado ao patrimônio',
+        currentUser.id,
+        currentUser.fullName,
+        newItem.id,
+        `${newItem.name} (Chapa: ${newItem.numeroChapa})`
+      );
+      
+      // Redireciona para a aba de itens para mostrar o resultado
+      setActiveTab('items');
+    }
   };
 
   /**
    * CRIAÇÃO DE ITEM COM NUMERAÇÃO MANUAL
-   * 
-   * Cria um novo item patrimonial usando um número de chapa específico informado pelo usuário.
-   * Usado quando o usuário quer definir manualmente o número da chapa.
-   * 
-   * @param item - Dados do item sem ID, mas COM numeroChapa específico
    */
-  const handleAddItemWithChapa = (item: Omit<PatrimonyItem, 'id'>) => {
+  const handleAddItemWithChapa = async (item: Omit<PatrimonyItem, 'id'>) => {
     console.log('MainApp - handleAddItemWithChapa INICIADO com:', item);
-    console.log('MainApp - Total items ANTES da adição:', items.length);
     
-    // Cria o item com a chapa específica fornecida
-    const newItem = addItemWithChapa(item);
-    console.log('MainApp - Item CRIADO com chapa específica:', newItem);
+    const newItem = await addItemWithChapa(item);
     
-    // Registra no log com descrição específica
-    addLog(
-      'CREATE',
-      'PATRIMONY',
-      'Novo item adicionado ao patrimônio com chapa específica',
-      currentUser.id,
-      currentUser.fullName,
-      newItem.id,
-      `${newItem.name} (Chapa: ${newItem.numeroChapa})`
-    );
-    
-    toast({
-      title: "Sucesso!",
-      description: `Item "${newItem.name}" adicionado com chapa ${newItem.numeroChapa}.`,
-    });
-    
-    console.log('MainApp - Toast exibido para item:', newItem.name);
-    
-    // Redireciona para a aba de itens
-    setActiveTab('items');
-    console.log('MainApp - Mudando para aba items');
+    if (newItem) {
+      // Registra no log com descrição específica
+      addLog(
+        'CREATE',
+        'PATRIMONY',
+        'Novo item adicionado ao patrimônio com chapa específica',
+        currentUser.id,
+        currentUser.fullName,
+        newItem.id,
+        `${newItem.name} (Chapa: ${newItem.numeroChapa})`
+      );
+      
+      // Redireciona para a aba de itens
+      setActiveTab('items');
+    }
   };
 
   /**
    * ATUALIZAÇÃO DE ITEM EXISTENTE
-   * 
-   * Atualiza um item patrimonial existente com novos dados.
-   * Registra as mudanças no log de auditoria.
-   * 
-   * @param id - ID único do item a ser atualizado
-   * @param updates - Objeto com os campos que devem ser atualizados
    */
-  const handleUpdateItem = (id: string, updates: Partial<PatrimonyItem>) => {
+  const handleUpdateItem = async (id: string, updates: Partial<PatrimonyItem>) => {
     console.log('Atualizando item:', id, updates);
-    updateItem(id, updates);
+    await updateItem(id, updates);
     
     // Busca o item atualizado para logging
     const updatedItem = items.find(item => item.id === id);
@@ -229,11 +152,6 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
       );
     }
     
-    toast({
-      title: "Sucesso!",
-      description: "Item atualizado com sucesso.",
-    });
-    
     // Limpa o estado de edição e volta para a listagem
     setEditingItem(null);
     setActiveTab('items');
@@ -241,16 +159,11 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
 
   /**
    * EXCLUSÃO DE ITEM
-   * 
-   * Remove um item do patrimônio permanentemente.
-   * Apenas usuários com permissão de 'delete' podem executar esta ação.
-   * 
-   * @param id - ID único do item a ser removido
    */
-  const handleDeleteItem = (id: string) => {
+  const handleDeleteItem = async (id: string) => {
     // Busca o item antes de deletar para logging
     const deletedItem = items.find(item => item.id === id);
-    deleteItem(id);
+    await deleteItem(id);
     
     if (deletedItem) {
       addLog(
@@ -262,21 +175,11 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         id,
         `${deletedItem.name} (Chapa: ${deletedItem.numeroChapa})`
       );
-      
-      toast({
-        title: "Sucesso!",
-        description: "Item removido com sucesso do patrimônio.",
-      })
     }
   };
 
   /**
    * PREPARAÇÃO PARA EDIÇÃO
-   * 
-   * Configura o formulário para editar um item existente.
-   * Define o item no estado e muda para a aba de formulário.
-   * 
-   * @param item - Item completo que será editado
    */
   const handleEditItem = (item: PatrimonyItem) => {
     setEditingItem(item);
@@ -388,20 +291,13 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   };
 
   /**
-   * IMPORTAÇÃO EM MASSA DE ITENS - VERSÃO CORRIGIDA
-   * 
-   * Processa uma lista de itens vindos de importação (Excel/CSV) e os adiciona ao sistema.
-   * Usa a função addMultipleItems para adicionar todos os itens de uma vez, evitando conflitos.
-   * 
-   * @param importedItems - Array de itens já processados do arquivo
+   * IMPORTAÇÃO EM MASSA DE ITENS
    */
-  const handleImportItems = (importedItems: PatrimonyItem[]) => {
+  const handleImportItems = async (importedItems: PatrimonyItem[]) => {
     console.log('MainApp - Iniciando importação de', importedItems.length, 'itens');
-    console.log('MainApp - Estado atual antes da importação:', items.length, 'itens');
     
     try {
-      // Usa a nova função que adiciona múltiplos itens de uma vez
-      const addedItems = addMultipleItems(importedItems);
+      const addedItems = await addMultipleItems(importedItems);
       console.log('MainApp - Itens adicionados com sucesso:', addedItems.length);
       
       // Registra a importação no log
@@ -417,36 +313,16 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         );
       });
       
-      console.log('MainApp - Todos os logs registrados para', addedItems.length, 'itens');
-      
-      // Feedback para o usuário sobre o resultado da importação
-      toast({
-        title: "Sucesso!",
-        description: `${addedItems.length} itens importados com sucesso.`,
-      });
-      
-      console.log('MainApp - Toast de sucesso exibido');
-      
     } catch (error) {
       console.error('MainApp - Erro durante a importação:', error);
-      toast({
-        title: "Erro na importação",
-        description: "Ocorreu um erro ao importar os itens. Tente novamente.",
-        variant: "destructive"
-      });
     }
     
     // Vai para listagem para ver os resultados
     setActiveTab('items');
-    console.log('MainApp - Redirecionando para aba items');
   };
 
   /**
    * MUDANÇA DE ABA
-   * 
-   * Controla a navegação entre as diferentes seções do sistema.
-   * 
-   * @param tab - Nome da aba para onde navegar
    */
   const handleTabChange = (tab: string) => {
     console.log('MainApp - Mudando aba para:', tab);
@@ -454,12 +330,15 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
   };
 
   // ORDENAÇÃO DOS ITENS
-  // Sempre exibe os itens ordenados por número de chapa crescente para melhor visualização
   const sortedItems = [...items].sort((a, b) => a.numeroChapa - b.numeroChapa);
 
-  console.log('MainApp - Total de items atual:', items.length);
-  console.log('MainApp - Items ordenados:', sortedItems.length);
-  console.log('MainApp - Renderizando com aba ativa:', activeTab);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-lg">Carregando dados...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen">
@@ -505,7 +384,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
               />
             )}
 
-            {/* ABA FORMULÁRIO: Criação/edição de itens (apenas para usuários com permissão) */}
+            {/* ABA FORMULÁRIO: Criação/edição de itens */}
             {activeTab === 'add' && hasPermission('edit') && (
               <PatrimonyForm
                 onSubmit={handleAddItem}
@@ -521,9 +400,14 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
               />
             )}
 
-            {/* ABA IMPORTAÇÃO: Upload de arquivos Excel/CSV (apenas para usuários com permissão) */}
+            {/* ABA IMPORTAÇÃO: Upload de arquivos Excel/CSV */}
             {activeTab === 'import' && hasPermission('edit') && (
               <PatrimonyImport onImport={handleImportItems} />
+            )}
+
+            {/* ABA COMPARAÇÃO: Nova funcionalidade para comparar arquivos */}
+            {activeTab === 'compare' && hasPermission('edit') && (
+              <PatrimonyComparison />
             )}
 
             {/* ABA FORNECEDORES: Gestão de fornecedores */}
@@ -535,7 +419,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
               />
             )}
 
-            {/* ABA NOVO FORNECEDOR: Formulário de criação (apenas para usuários com permissão) */}
+            {/* ABA NOVO FORNECEDOR: Formulário de criação */}
             {activeTab === 'addSupplier' && hasPermission('edit') && (
               <SupplierForm
                 onSubmit={handleAddSupplier}

@@ -9,7 +9,190 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          description: string
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string
+          id: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type: string
+          id?: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string
+          id?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
+      locations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          responsible_id: string | null
+          responsible_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          responsible_id?: string | null
+          responsible_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          responsible_id?: string | null
+          responsible_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_responsible_id_fkey"
+            columns: ["responsible_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patrimony_items: {
+        Row: {
+          acquisition_date: string
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          location: string
+          name: string
+          numero_chapa: number
+          responsible: string
+          status: string
+          supplier_id: string | null
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          acquisition_date: string
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          location: string
+          name: string
+          numero_chapa: number
+          responsible: string
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          acquisition_date?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string
+          name?: string
+          numero_chapa?: number
+          responsible?: string
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_patrimony_items_supplier"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          cnpj: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          address?: string | null
+          cnpj?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          address?: string | null
+          cnpj?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          role: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          role?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          role?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
