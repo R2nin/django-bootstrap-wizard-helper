@@ -21,7 +21,12 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
   const [previewData, setPreviewData] = useState<ExcelRow[]>([]);
 
   const processFile = async () => {
+    console.log('PatrimonyImport - Starting file processing');
+    console.log('PatrimonyImport - File:', file?.name);
+    console.log('PatrimonyImport - Location:', location);
+
     if (!file || !location.trim()) {
+      console.log('PatrimonyImport - Missing file or location');
       toast({
         title: "Erro",
         description: "Por favor, selecione um arquivo e informe a localização.",
@@ -35,17 +40,23 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
     try {
       let parsedData: ExcelRow[] = [];
 
+      console.log('PatrimonyImport - Processing file type:', file.type);
+      
       if (file.name.endsWith('.csv')) {
+        console.log('PatrimonyImport - Processing CSV file');
         parsedData = await processCSVFile(file);
       } else {
+        console.log('PatrimonyImport - Processing Excel file');
         parsedData = await processExcelFile(file);
       }
+
+      console.log('PatrimonyImport - Parsed data length:', parsedData.length);
+      console.log('PatrimonyImport - First 3 parsed items:', parsedData.slice(0, 3));
 
       if (parsedData.length === 0) {
         throw new Error('Nenhum dado válido encontrado no arquivo');
       }
 
-      console.log('Dados processados:', parsedData);
       setPreviewData(parsedData);
       
       toast({
@@ -54,7 +65,7 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
       });
       
     } catch (error) {
-      console.error('Error processing file:', error);
+      console.error('PatrimonyImport - Error processing file:', error);
       toast({
         title: "Erro ao processar arquivo",
         description: error instanceof Error ? error.message : "Erro desconhecido",
@@ -66,7 +77,11 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
   };
 
   const handleImport = async () => {
+    console.log('PatrimonyImport - Starting import process');
+    console.log('PatrimonyImport - Preview data length:', previewData.length);
+
     if (previewData.length === 0) {
+      console.log('PatrimonyImport - No items to import');
       toast({
         title: "Erro",
         description: "Nenhum item para importar. Processe um arquivo primeiro.",
@@ -76,23 +91,30 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
     }
 
     try {
-      const itemsToImport: PatrimonyItem[] = previewData.map(row => ({
-        id: '', // Será gerado pelo Supabase
-        numeroChapa: row.numeroChapa,
-        name: row.name,
-        category: 'Outros',
-        location: location.trim(),
-        acquisitionDate: row.acquisitionDate,
-        value: 0,
-        status: 'active' as const,
-        description: `Importado do arquivo: ${file?.name}`,
-        responsible: 'A definir'
-      }));
+      const itemsToImport: PatrimonyItem[] = previewData.map((row, index) => {
+        const item = {
+          id: '', // Será gerado pelo Supabase
+          numeroChapa: row.numeroChapa,
+          name: row.name,
+          category: 'Outros',
+          location: location.trim(),
+          acquisitionDate: row.acquisitionDate,
+          value: 0,
+          status: 'active' as const,
+          description: `Importado do arquivo: ${file?.name}`,
+          responsible: 'A definir'
+        };
+        
+        console.log(`PatrimonyImport - Item ${index + 1} to import:`, item);
+        return item;
+      });
 
-      console.log('PatrimonyImport - Itens para importar:', itemsToImport);
+      console.log('PatrimonyImport - Total items to import:', itemsToImport.length);
       
       // Chamar a função onImport passada como prop
       await onImport(itemsToImport);
+      
+      console.log('PatrimonyImport - Import completed successfully');
       
       // Reset form após importação bem-sucedida
       setFile(null);
@@ -100,7 +122,7 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
       setPreviewData([]);
       
     } catch (error) {
-      console.error('Erro na importação:', error);
+      console.error('PatrimonyImport - Error during import:', error);
       toast({
         title: "Erro na importação",
         description: "Ocorreu um erro ao importar os itens. Tente novamente.",

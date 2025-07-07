@@ -19,6 +19,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
     patrimonyLoading,
     suppliers,
     users,
+    locations,
     logs,
     handleAddItem,
     handleAddItemWithChapa,
@@ -36,6 +37,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
 
   console.log('MainApp - Patrimony items:', patrimonyItems.length);
   console.log('MainApp - Loading:', patrimonyLoading);
+  console.log('MainApp - Locations:', locations);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -43,6 +45,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         currentUser={currentUser} 
         onLogout={onLogout}
         onAddLocation={() => setCurrentSection('location-form')}
+        locations={locations}
       />
       <div className="flex">
         <Navigation
