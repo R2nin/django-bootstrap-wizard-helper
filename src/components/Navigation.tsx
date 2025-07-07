@@ -2,20 +2,20 @@
 import { FunctionComponent } from 'react';
 
 interface NavigationProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  hasPermission: (action: 'view' | 'edit' | 'delete' | 'admin') => boolean;
+  currentSection: string;
+  onSectionChange: (section: string) => void;
+  userRole: 'admin' | 'user';
 }
 
-export const Navigation: FunctionComponent<NavigationProps> = ({ activeTab, setActiveTab, hasPermission }) => {
+export const Navigation: FunctionComponent<NavigationProps> = ({ currentSection, onSectionChange, userRole }) => {
   return (
     <nav className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex space-x-8">
           <button
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => onSectionChange('dashboard')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'dashboard'
+              currentSection === 'dashboard'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
@@ -24,9 +24,9 @@ export const Navigation: FunctionComponent<NavigationProps> = ({ activeTab, setA
           </button>
 
           <button
-            onClick={() => setActiveTab('items')}
+            onClick={() => onSectionChange('patrimony-list')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'items'
+              currentSection === 'patrimony-list'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
@@ -34,34 +34,34 @@ export const Navigation: FunctionComponent<NavigationProps> = ({ activeTab, setA
             Patrimônio
           </button>
 
-          {hasPermission('edit') && (
+          {userRole === 'admin' && (
             <>
               <button
-                onClick={() => setActiveTab('add')}
+                onClick={() => onSectionChange('patrimony-form')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'add'
+                  currentSection === 'patrimony-form'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Editar Patrimônio
+                Adicionar Patrimônio
               </button>
 
               <button
-                onClick={() => setActiveTab('import')}
+                onClick={() => onSectionChange('patrimony-import')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'import'
+                  currentSection === 'patrimony-import'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Acrescentar Item
+                Importar Itens
               </button>
 
               <button
-                onClick={() => setActiveTab('compare')}
+                onClick={() => onSectionChange('patrimony-comparison')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'compare'
+                  currentSection === 'patrimony-comparison'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
@@ -72,9 +72,9 @@ export const Navigation: FunctionComponent<NavigationProps> = ({ activeTab, setA
           )}
 
           <button
-            onClick={() => setActiveTab('suppliers')}
+            onClick={() => onSectionChange('supplier-list')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'suppliers'
+              currentSection === 'supplier-list'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
@@ -82,36 +82,34 @@ export const Navigation: FunctionComponent<NavigationProps> = ({ activeTab, setA
             Fornecedores
           </button>
 
-          {hasPermission('edit') && (
-            <button
-              onClick={() => setActiveTab('addSupplier')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'addSupplier'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Novo Fornecedor
-            </button>
-          )}
-
-          <button
-            onClick={() => setActiveTab('logs')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'logs'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Logs
-          </button>
-
-          {hasPermission('admin') && (
+          {userRole === 'admin' && (
             <>
               <button
-                onClick={() => setActiveTab('users')}
+                onClick={() => onSectionChange('supplier-form')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'users'
+                  currentSection === 'supplier-form'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Novo Fornecedor
+              </button>
+
+              <button
+                onClick={() => onSectionChange('user-form')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  currentSection === 'user-form'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Novo Usuário
+              </button>
+
+              <button
+                onClick={() => onSectionChange('user-list')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  currentSection === 'user-list'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
@@ -120,22 +118,33 @@ export const Navigation: FunctionComponent<NavigationProps> = ({ activeTab, setA
               </button>
 
               <button
-                onClick={() => setActiveTab('addUser')}
+                onClick={() => onSectionChange('location-form')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'addUser'
+                  currentSection === 'location-form'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Novo Usuário
+                Nova Localização
               </button>
             </>
           )}
 
           <button
-            onClick={() => setActiveTab('manual')}
+            onClick={() => onSectionChange('logs')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'manual'
+              currentSection === 'logs'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Logs
+          </button>
+
+          <button
+            onClick={() => onSectionChange('manual')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              currentSection === 'manual'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
@@ -144,9 +153,9 @@ export const Navigation: FunctionComponent<NavigationProps> = ({ activeTab, setA
           </button>
 
           <button
-            onClick={() => setActiveTab('technical')}
+            onClick={() => onSectionChange('docs')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'technical'
+              currentSection === 'docs'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}

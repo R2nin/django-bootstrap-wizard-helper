@@ -23,6 +23,8 @@ import { useUserData } from "@/hooks/useUserData";
 import { useLocationData } from "@/hooks/useLocationData";
 import { useLogData } from "@/hooks/useLogData";
 import { User } from "@/types/user";
+import { Supplier } from "@/types/supplier";
+import { toast } from "@/components/ui/use-toast";
 
 interface MainAppProps {
   currentUser: User;
@@ -44,9 +46,9 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
     deleteItem
   } = useSupabasePatrimony();
 
-  const { suppliers } = useSupplierData();
-  const { users } = useUserData();
-  const { locations } = useLocationData();
+  const { suppliers, addSupplier, deleteSupplier } = useSupplierData();
+  const { users, addUser, deleteUser } = useUserData();
+  const { locations, addLocation } = useLocationData();
   const { logs, addLog } = useLogData();
 
   console.log('MainApp - Patrimony items:', patrimonyItems.length);
@@ -155,6 +157,97 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
     setEditingItem(null);
   };
 
+  const handleAddSupplier = async (supplierData: Omit<Supplier, 'id' | 'createdAt'>) => {
+    const newSupplier = await addSupplier(supplierData);
+    if (newSupplier) {
+      addLog({
+        action: 'CREATE',
+        entityType: 'SUPPLIER',
+        description: `Fornecedor "${newSupplier.name}" foi cadastrado`,
+        userId: currentUser.id,
+        userName: currentUser.fullName,
+        entityId: newSupplier.id,
+        entityName: newSupplier.name
+      });
+      toast({
+        title: "Sucesso!",
+        description: "Fornecedor cadastrado com sucesso",
+      });
+    }
+  };
+
+  const handleDeleteSupplier = async (id: string) => {
+    const supplierToDelete = suppliers.find(s => s.id === id);
+    await deleteSupplier(id);
+    
+    if (supplierToDelete) {
+      addLog({
+        action: 'DELETE',
+        entityType: 'SUPPLIER',
+        description: `Fornecedor "${supplierToDelete.name}" foi removido`,
+        userId: currentUser.id,
+        userName: currentUser.fullName,
+        entityId: id,
+        entityName: supplierToDelete.name
+      });
+    }
+  };
+
+  const handleAddUser = async (userData: Omit<User, 'id' | 'createdAt'> & { role: 'admin' | 'user' }) => {
+    const newUser = await addUser(userData);
+    if (newUser) {
+      addLog({
+        action: 'CREATE',
+        entityType: 'USER',
+        description: `Usuário "${newUser.fullName}" foi cadastrado`,
+        userId: currentUser.id,
+        userName: currentUser.fullName,
+        entityId: newUser.id,
+        entityName: newUser.fullName
+      });
+      toast({
+        title: "Sucesso!",
+        description: "Usuário cadastrado com sucesso",
+      });
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    const userToDelete = users.find(u => u.id === id);
+    await deleteUser(id);
+    
+    if (userToDelete) {
+      addLog({
+        action: 'DELETE',
+        entityType: 'USER',
+        description: `Usuário "${userToDelete.fullName}" foi removido`,
+        userId: currentUser.id,
+        userName: currentUser.fullName,
+        entityId: id,
+        entityName: userToDelete.fullName
+      });
+    }
+  };
+
+  const handleAddLocation = async (locationData: { name: string; responsibleId: string; responsibleName: string }) => {
+    const newLocation = await addLocation(locationData);
+    if (newLocation) {
+      addLog({
+        action: 'CREATE',
+        entityType: 'LOCATION',
+        description: `Localização "${newLocation.name}" foi cadastrada`,
+        userId: currentUser.id,
+        userName: currentUser.fullName,
+        entityId: newLocation.id,
+        entityName: newLocation.name
+      });
+      toast({
+        title: "Sucesso!",
+        description: "Localização cadastrada com sucesso",
+      });
+    }
+  };
+
   const renderContent = () => {
     if (patrimonyLoading) {
       return (
@@ -187,7 +280,7 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
             items={patrimonyItems}
             onEdit={handleEditItem}
             onDelete={handleDeleteItem}
-            suppliers={suppliers}
+            onUpdate={handleUpdateItem}
           />
         );
       
@@ -201,19 +294,25 @@ export const MainApp = ({ currentUser, onLogout }: MainAppProps) => {
         return <PatrimonyReport items={patrimonyItems} />;
       
       case 'supplier-form':
-        return <SupplierForm />;
+        return <SupplierForm onSubmit={handleAddSupplier} />;
       
       case 'supplier-list':
-        return <SupplierList />;
+        return <SupplierList suppliers={suppliers} onDelete={handleDeleteSupplier} />;
       
       case 'user-form':
-        return <UserForm />;
+        return <UserForm onSubmit={handleAddUser} />;
       
       case 'user-list':
-        return <UserList />;
+        return <UserList users={users} onDelete={handleDeleteUser} />;
       
       case 'location-form':
-        return <LocationForm />;
+        return (
+          <LocationForm
+            onSubmit={handleAddLocation}
+            users={users}
+            onCancel={() => setCurrentSection('dashboard')}
+          />
+        );
       
       case 'logs':
         return <LogList logs={logs} />;
