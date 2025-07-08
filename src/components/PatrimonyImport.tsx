@@ -91,8 +91,9 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
     }
 
     try {
+      // Criar os itens com todos os campos obrigatórios
       const itemsToImport: PatrimonyItem[] = previewData.map((row, index) => {
-        const item = {
+        const item: PatrimonyItem = {
           id: '', // Será gerado pelo Supabase
           numeroChapa: row.numeroChapa,
           name: row.name,
@@ -101,7 +102,7 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
           acquisitionDate: row.acquisitionDate,
           value: 0,
           status: 'active' as const,
-          description: `Importado do arquivo: ${file?.name}`,
+          description: `Importado do arquivo: ${file?.name || 'arquivo'}`,
           responsible: 'A definir'
         };
         
@@ -121,11 +122,16 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
       setLocation('');
       setPreviewData([]);
       
+      toast({
+        title: "Sucesso!",
+        description: `${itemsToImport.length} itens importados com sucesso.`,
+      });
+      
     } catch (error) {
       console.error('PatrimonyImport - Error during import:', error);
       toast({
         title: "Erro na importação",
-        description: "Ocorreu um erro ao importar os itens. Tente novamente.",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao importar os itens. Tente novamente.",
         variant: "destructive"
       });
     }

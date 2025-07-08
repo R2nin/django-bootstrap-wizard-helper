@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PatrimonyItem } from '@/pages/Index';
@@ -191,41 +190,43 @@ export const useSupabasePatrimony = () => {
 
   // Adicionar múltiplos itens
   const addMultipleItems = async (itemsData: PatrimonyItem[]): Promise<PatrimonyItem[]> => {
+    console.log('useSupabasePatrimony - addMultipleItems called with:', itemsData.length, 'items');
+    
     try {
-      const dbItems = itemsData.map(item => convertToDB(item));
+      // Converter todos os itens para o formato do DB
+      const dbItems = itemsData.map(item => {
+        const dbItem = convertToDB(item);
+        console.log('useSupabasePatrimony - Converting item:', item.name, 'to DB format:', dbItem);
+        return dbItem;
+      });
 
+      console.log('useSupabasePatrimony - Inserting items into database...');
+      
       const { data, error } = await supabase
         .from('patrimony_items')
         .insert(dbItems)
         .select();
 
       if (error) {
-        console.error('Erro ao adicionar múltiplos itens:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao importar itens",
-          variant: "destructive"
-        });
-        return [];
+        console.error('useSupabasePatrimony - Database error:', error);
+        throw error;
       }
 
+      console.log('useSupabasePatrimony - Database insert successful, returned:', data?.length, 'items');
+
       const newItems = data?.map(convertFromDB) || [];
-      setItems(prev => [...prev, ...newItems].sort((a, b) => a.numeroChapa - b.numeroChapa));
+      console.log('useSupabasePatrimony - Converted items:', newItems.length);
       
-      toast({
-        title: "Sucesso!",
-        description: `${newItems.length} itens importados com sucesso`,
+      setItems(prev => {
+        const updated = [...prev, ...newItems].sort((a, b) => a.numeroChapa - b.numeroChapa);
+        console.log('useSupabasePatrimony - Updated items list length:', updated.length);
+        return updated;
       });
 
       return newItems;
     } catch (error) {
-      console.error('Erro ao adicionar múltiplos itens:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao importar itens",
-        variant: "destructive"
-      });
-      return [];
+      console.error('useSupabasePatrimony - Error in addMultipleItems:', error);
+      throw error;
     }
   };
 
