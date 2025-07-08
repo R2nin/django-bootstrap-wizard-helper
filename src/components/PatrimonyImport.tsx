@@ -18,6 +18,7 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [location, setLocation] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [previewData, setPreviewData] = useState<ExcelRow[]>([]);
 
   const processFile = async () => {
@@ -90,13 +91,17 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
       return;
     }
 
+    setIsImporting(true);
+
     try {
       // Criar os itens com todos os campos obrigatórios
       const itemsToImport: PatrimonyItem[] = previewData.map((row, index) => {
+        console.log(`PatrimonyImport - Processing row ${index + 1}:`, row);
+        
         const item: PatrimonyItem = {
           id: '', // Será gerado pelo Supabase
           numeroChapa: row.numeroChapa,
-          name: row.name,
+          name: row.name.trim(),
           category: 'Outros',
           location: location.trim(),
           acquisitionDate: row.acquisitionDate,
@@ -106,11 +111,12 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
           responsible: 'A definir'
         };
         
-        console.log(`PatrimonyImport - Item ${index + 1} to import:`, item);
+        console.log(`PatrimonyImport - Item ${index + 1} created:`, item);
         return item;
       });
 
       console.log('PatrimonyImport - Total items to import:', itemsToImport.length);
+      console.log('PatrimonyImport - Calling onImport...');
       
       // Chamar a função onImport passada como prop
       await onImport(itemsToImport);
@@ -129,11 +135,29 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
       
     } catch (error) {
       console.error('PatrimonyImport - Error during import:', error);
+      
+      let errorMessage = "Ocorreu um erro ao importar os itens. Tente novamente.";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Tratar erros específicos
+        if (error.message.includes('duplicate key')) {
+          errorMessage = "Alguns números de chapa já existem no sistema. Verifique os dados.";
+        } else if (error.message.includes('date/time field value out of range')) {
+          errorMessage = "Algumas datas estão em formato inválido. Verifique as datas no arquivo.";
+        } else if (error.message.includes('chapas já existem')) {
+          errorMessage = error.message; // Usar a mensagem específica sobre chapas duplicadas
+        }
+      }
+      
       toast({
         title: "Erro na importação",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao importar os itens. Tente novamente.",
+        description: errorMessage,
         variant: "destructive"
       });
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -166,8 +190,11 @@ export const PatrimonyImport = ({ onImport }: PatrimonyImportProps) => {
           </Button>
 
           {previewData.length > 0 && (
-            <Button onClick={handleImport}>
-              Importar {previewData.length} Itens
+            <Button 
+              onClick={handleImport}
+              disabled={isImporting}
+            >
+              {isImporting ? 'Importando...' : `Importar ${previewData.length} Itens`}
             </Button>
           )}
         </div>

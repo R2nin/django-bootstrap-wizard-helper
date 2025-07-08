@@ -9,6 +9,8 @@ export interface ExcelRow {
 
 export const formatDate = (dateValue: string): string => {
   try {
+    console.log('formatDate - Input value:', dateValue);
+    
     // Se é uma data do Excel (número serial)
     if (!isNaN(Number(dateValue))) {
       const excelDate = XLSX.SSF.parse_date_code(Number(dateValue));
@@ -16,35 +18,67 @@ export const formatDate = (dateValue: string): string => {
         const year = excelDate.y;
         const month = String(excelDate.m).padStart(2, '0');
         const day = String(excelDate.d).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        const formattedDate = `${year}-${month}-${day}`;
+        console.log('formatDate - Excel date converted:', formattedDate);
+        return formattedDate;
       }
     }
     
-    // Se está em formato DD/MM/YYYY
+    // Se está em formato DD/MM/YYYY ou DD/MM/YY
     if (dateValue.includes('/')) {
       const [day, month, year] = dateValue.split('/');
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      let fullYear = year;
+      
+      // Converter anos de 2 dígitos para 4 dígitos
+      if (year.length === 2) {
+        const yearNum = parseInt(year);
+        // Se for maior que 50, assume século passado (19xx), senão assume século atual (20xx)
+        fullYear = yearNum > 50 ? `19${year}` : `20${year}`;
+      }
+      
+      const formattedDate = `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      console.log('formatDate - Slash date converted:', formattedDate);
+      return formattedDate;
     }
     
-    // Se está em formato DD-MM-YYYY
-    if (dateValue.includes('-') && dateValue.length === 10) {
+    // Se está em formato DD-MM-YYYY ou DD-MM-YY
+    if (dateValue.includes('-') && dateValue.length <= 10) {
       const parts = dateValue.split('-');
-      if (parts[0].length === 2) {
-        // DD-MM-YYYY
-        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      if (parts.length === 3) {
+        let [day, month, year] = parts;
+        
+        // Se o primeiro elemento tem 4 dígitos, é formato YYYY-MM-DD
+        if (parts[0].length === 4) {
+          [year, month, day] = parts;
+        } else {
+          // Converter anos de 2 dígitos para 4 dígitos
+          if (year.length === 2) {
+            const yearNum = parseInt(year);
+            year = yearNum > 50 ? `19${year}` : `20${year}`;
+          }
+        }
+        
+        const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        console.log('formatDate - Dash date converted:', formattedDate);
+        return formattedDate;
       }
     }
     
-    // Tentar validar a data
+    // Tentar validar a data como está
     const dateObj = new Date(dateValue);
     if (!isNaN(dateObj.getTime())) {
-      return dateValue;
+      const formattedDate = dateObj.toISOString().split('T')[0];
+      console.log('formatDate - Direct date converted:', formattedDate);
+      return formattedDate;
     }
     
-    throw new Error('Invalid date format');
-  } catch {
+    throw new Error(`Invalid date format: ${dateValue}`);
+  } catch (error) {
+    console.error('formatDate - Error formatting date:', dateValue, error);
     // Se não conseguir converter, usar data atual
-    return new Date().toISOString().split('T')[0];
+    const currentDate = new Date().toISOString().split('T')[0];
+    console.log('formatDate - Using current date as fallback:', currentDate);
+    return currentDate;
   }
 };
 

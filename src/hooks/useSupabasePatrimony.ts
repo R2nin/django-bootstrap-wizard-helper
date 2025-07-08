@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PatrimonyItem } from '@/pages/Index';
@@ -193,37 +194,70 @@ export const useSupabasePatrimony = () => {
     console.log('useSupabasePatrimony - addMultipleItems called with:', itemsData.length, 'items');
     
     try {
+      // Verificar se há números de chapa duplicados
+      const existingChapas = items.map(item => item.numeroChapa);
+      const duplicates = itemsData.filter(item => existingChapas.includes(item.numeroChapa));
+      
+      if (duplicates.length > 0) {
+        const duplicateChapas = duplicates.map(item => item.numeroChapa).join(', ');
+        throw new Error(`As seguintes chapas já existem no sistema: ${duplicateChapas}`);
+      }
+      
       // Converter todos os itens para o formato do DB
-      const dbItems = itemsData.map(item => {
+      const dbItems = itemsData.map((item, index) => {
+        console.log(`useSupabasePatrimony - Converting item ${index + 1}:`, item.name);
+        console.log(`useSupabasePatrimony - Item data:`, {
+          numeroChapa: item.numeroChapa,
+          acquisitionDate: item.acquisitionDate,
+          name: item.name
+        });
+        
         const dbItem = convertToDB(item);
-        console.log('useSupabasePatrimony - Converting item:', item.name, 'to DB format:', dbItem);
+        console.log(`useSupabasePatrimony - Converted to DB format:`, dbItem);
         return dbItem;
       });
 
-      console.log('useSupabasePatrimony - Inserting items into database...');
+      console.log('useSupabasePatrimony - Total items to insert:', dbItems.length);
       
-      const { data, error } = await supabase
-        .from('patrimony_items')
-        .insert(dbItems)
-        .select();
+      // Inserir em lotes menores para evitar timeouts
+      const batchSize = 50;
+      const allNewItems: PatrimonyItem[] = [];
+      
+      for (let i = 0; i < dbItems.length; i += batchSize) {
+        const batch = dbItems.slice(i, i + batchSize);
+        console.log(`useSupabasePatrimony - Inserting batch ${Math.floor(i/batchSize) + 1} with ${batch.length} items`);
+        
+        const { data, error } = await supabase
+          .from('patrimony_items')
+          .insert(batch)
+          .select();
 
-      if (error) {
-        console.error('useSupabasePatrimony - Database error:', error);
-        throw error;
+        if (error) {
+          console.error('useSupabasePatrimony - Database error in batch:', error);
+          console.error('useSupabasePatrimony - Error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw new Error(`Erro ao inserir lote ${Math.floor(i/batchSize) + 1}: ${error.message}`);
+        }
+
+        console.log(`useSupabasePatrimony - Batch ${Math.floor(i/batchSize) + 1} inserted successfully:`, data?.length, 'items');
+        
+        const convertedItems = data?.map(convertFromDB) || [];
+        allNewItems.push(...convertedItems);
       }
 
-      console.log('useSupabasePatrimony - Database insert successful, returned:', data?.length, 'items');
-
-      const newItems = data?.map(convertFromDB) || [];
-      console.log('useSupabasePatrimony - Converted items:', newItems.length);
+      console.log('useSupabasePatrimony - All batches completed, total items:', allNewItems.length);
       
       setItems(prev => {
-        const updated = [...prev, ...newItems].sort((a, b) => a.numeroChapa - b.numeroChapa);
+        const updated = [...prev, ...allNewItems].sort((a, b) => a.numeroChapa - b.numeroChapa);
         console.log('useSupabasePatrimony - Updated items list length:', updated.length);
         return updated;
       });
 
-      return newItems;
+      return allNewItems;
     } catch (error) {
       console.error('useSupabasePatrimony - Error in addMultipleItems:', error);
       throw error;
